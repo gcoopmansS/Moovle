@@ -4,6 +4,7 @@ import ActivityFeed from "./components/ActivityFeed";
 import Header from "./components/Header";
 import NavigationFooter from "./components/NavigationFooter";
 import ActivityForm from "./components/ActivityForm";
+import Friends from "./components/Friends";
 
 // Initial activities data
 const initialActivities = [
@@ -131,6 +132,8 @@ function App() {
       return <ActivityForm onAddActivity={handleAddActivity} />;
     } else if (selectedButton === "feed") {
       return <ActivityFeed activities={activities} />;
+    } else if (selectedButton === "friends") {
+      return <Friends />;
     } else if (selectedButton === "profile") {
       return <div className="p-4">User Profile Information Goes Here</div>;
     }
@@ -141,6 +144,8 @@ function App() {
       setSelectedButton("create");
     } else if (buttonClicked === "feed") {
       setSelectedButton("feed");
+    } else if (buttonClicked === "friends") {
+      setSelectedButton("friends");
     } else if (buttonClicked === "profile") {
       setSelectedButton("profile");
     }
@@ -153,6 +158,7 @@ function App() {
       <NavigationFooter
         onClickingCreate={() => handleFooterClick("create")}
         onClickingFeed={() => handleFooterClick("feed")}
+        onClickingFriends={() => handleFooterClick("friends")}
         onClickingProfile={() => handleFooterClick("profile")}
         selectedButton={selectedButton}
       />
