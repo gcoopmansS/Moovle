@@ -12,7 +12,7 @@ export default function NavigationFooter({
       <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
         <button
           onClick={onClickingFeed}
-          className={`p-3 flex flex-col items-center rounded-xl hover:bg-blue-500  hover:text-white ${
+          className={`w-20 p-3 flex flex-col items-center rounded-xl hover:bg-blue-500  hover:text-white ${
             selectedButton === "feed" ? "bg-blue-500 text-white" : ""
           }`}
         >
@@ -21,7 +21,7 @@ export default function NavigationFooter({
         </button>
         <button
           onClick={onClickingCreate}
-          className={`p-3 flex flex-col items-center rounded-xl hover:bg-green-500  hover:text-white  ${
+          className={`w-20 p-3 flex flex-col items-center rounded-xl hover:bg-green-500  hover:text-white  ${
             selectedButton === "create" ? "bg-green-500  text-white" : ""
           }`}
         >
@@ -30,7 +30,7 @@ export default function NavigationFooter({
         </button>
         <button
           onClick={onClickingFriends}
-          className={`p-3 flex flex-col items-center rounded-xl hover:bg-orange-500 hover:text-white ${
+          className={`w-20 p-3 flex flex-col items-center rounded-xl hover:bg-orange-500 hover:text-white ${
             selectedButton === "friends" ? "bg-orange-500 text-white" : ""
           }`}
         >
@@ -39,7 +39,7 @@ export default function NavigationFooter({
         </button>
         <button
           onClick={onClickingProfile}
-          className={`p-3 flex flex-col items-center rounded-xl hover:bg-purple-500  hover:text-white ${
+          className={`w-20 p-3 flex flex-col items-center rounded-xl hover:bg-purple-500  hover:text-white ${
             selectedButton === "profile" ? "bg-purple-500 text-white" : ""
           }`}
         >

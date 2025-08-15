@@ -5,6 +5,8 @@ import {
   LiaWalkingSolid,
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
+import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
+import { createActivity } from "../api/activities";
 
 const activityTypes = [
   {
@@ -29,7 +31,9 @@ const activityTypes = [
   },
 ];
 
-export default function ActivityForm({ onAddActivity }) {
+export default function ActivityForm({ onCreated }) {
+  const { user } = useSupabaseAuth();
+
   const [selectedType, setSelectedType] = useState("running");
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
@@ -38,14 +42,19 @@ export default function ActivityForm({ onAddActivity }) {
   const [distance, setDistance] = useState("");
   const [maxParticipants, setMaxParticipants] = useState(2);
   const [description, setDescription] = useState("");
+  const [visibility, setVisibility] = useState("friends"); // optional selector below
   const [touched, setTouched] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   function handleBlur(field) {
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setErrorMsg("");
+
     if (
       !title ||
       !date ||
@@ -63,28 +72,39 @@ export default function ActivityForm({ onAddActivity }) {
       });
       return;
     }
-    if (onAddActivity) {
-      onAddActivity({
+
+    const startsAtIso = new Date(`${date}T${time}:00`).toISOString();
+
+    setSaving(true);
+    try {
+      await createActivity({
+        userId: user.id,
         title,
-        type: selectedType,
-        date,
-        time,
-        location,
-        distance,
-        maxParticipants,
         description,
+        starts_at: startsAtIso,
+        location_text: location,
+        visibility,
+        type: selectedType,
+        distance,
+        max_participants: maxParticipants,
       });
+
+      // Reset & navigate back to feed (parent will likely switch tabs)
+      setTitle("");
+      setDate("");
+      setTime("");
+      setLocation("");
+      setDistance("");
+      setMaxParticipants(2);
+      setDescription("");
+      setSelectedType("running");
+      setTouched({});
+      onCreated?.();
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to create activity");
+    } finally {
+      setSaving(false);
     }
-    // Optionally reset form fields here
-    setTitle("");
-    setDate("");
-    setTime("");
-    setLocation("");
-    setDistance("");
-    setMaxParticipants(2);
-    setDescription("");
-    setSelectedType("running");
-    setTouched({});
   }
 
   return (
@@ -92,7 +112,9 @@ export default function ActivityForm({ onAddActivity }) {
       <h2 className="text-xl font-bold mb-4 text-center">
         Create a New Activity
       </h2>
+
       <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Title */}
         <div>
           <label className="block text-sm font-medium mb-1" htmlFor="title">
             Title <span className="text-red-500">*</span>
@@ -111,6 +133,8 @@ export default function ActivityForm({ onAddActivity }) {
             <span className="text-xs text-red-500">Title is required</span>
           )}
         </div>
+
+        {/* Type */}
         <div>
           <label className="block text-sm font-medium mb-1">
             Type <span className="text-red-500">*</span>
@@ -134,6 +158,8 @@ export default function ActivityForm({ onAddActivity }) {
             ))}
           </div>
         </div>
+
+        {/* Date & Time */}
         <div className="flex gap-4">
           <div className="flex-1">
             <label className="block text-sm font-medium mb-1" htmlFor="date">
@@ -170,6 +196,8 @@ export default function ActivityForm({ onAddActivity }) {
             )}
           </div>
         </div>
+
+        {/* Location */}
         <div>
           <label className="block text-sm font-medium mb-1" htmlFor="location">
             Location <span className="text-red-500">*</span>
@@ -188,6 +216,8 @@ export default function ActivityForm({ onAddActivity }) {
             <span className="text-xs text-red-500">Location is required</span>
           )}
         </div>
+
+        {/* Distance & Max */}
         <div className="flex gap-4">
           <div className="flex-1">
             <label
@@ -231,6 +261,8 @@ export default function ActivityForm({ onAddActivity }) {
               )}
           </div>
         </div>
+
+        {/* Description */}
         <div>
           <label
             className="block text-sm font-medium mb-1"
@@ -246,11 +278,35 @@ export default function ActivityForm({ onAddActivity }) {
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+
+        {/* Visibility (optional, default 'friends') */}
+        <div>
+          <label
+            className="block text-sm font-medium mb-1"
+            htmlFor="visibility"
+          >
+            Visibility
+          </label>
+          <select
+            id="visibility"
+            className="w-full p-2 border border-gray-300 rounded"
+            value={visibility}
+            onChange={(e) => setVisibility(e.target.value)}
+          >
+            <option value="friends">Friends</option>
+            <option value="public">Public</option>
+            <option value="private">Private (only you)</option>
+          </select>
+        </div>
+
+        {errorMsg && <div className="text-red-600 text-sm">{errorMsg}</div>}
+
         <button
           type="submit"
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-lg font-semibold mt-4"
+          disabled={saving}
+          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors text-lg font-semibold mt-4 disabled:opacity-60"
         >
-          Find SportBuddies
+          {saving ? "Creating…" : "Find SportBuddies"}
         </button>
       </form>
     </div>
