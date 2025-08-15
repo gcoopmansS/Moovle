@@ -46,11 +46,14 @@ export async function createActivity({
   title,
   description,
   starts_at,
-  location_text,
+  location_text, // optional legacy field; you can drop later
   visibility = "friends",
   type,
   distance,
   max_participants,
+  place_name, // NEW
+  lat, // NEW
+  lng, // NEW
 }) {
   const { error } = await supabase.from("activities").insert({
     creator_id: userId,
@@ -62,6 +65,10 @@ export async function createActivity({
     type,
     distance,
     max_participants,
+    place_name,
+    lat,
+    lng,
+    // NOTE: geom will be auto-set by the trigger when lat/lng are present
   });
   if (error) throw error;
 }

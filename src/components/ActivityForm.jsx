@@ -7,6 +7,7 @@ import {
 import { IoTennisballOutline } from "react-icons/io5";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { createActivity } from "../api/activities";
+import LocationInput from "./LocationInput";
 
 const activityTypes = [
   {
@@ -38,7 +39,11 @@ export default function ActivityForm({ onCreated }) {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState({
+    place_name: "",
+    lat: undefined,
+    lng: undefined,
+  });
   const [distance, setDistance] = useState("");
   const [maxParticipants, setMaxParticipants] = useState(2);
   const [description, setDescription] = useState("");
@@ -59,7 +64,9 @@ export default function ActivityForm({ onCreated }) {
       !title ||
       !date ||
       !time ||
-      !location ||
+      !location.place_name ||
+      location.lat == null ||
+      location.lng == null ||
       !maxParticipants ||
       maxParticipants < 2
     ) {
@@ -82,7 +89,10 @@ export default function ActivityForm({ onCreated }) {
         title,
         description,
         starts_at: startsAtIso,
-        location_text: location,
+        location_text: location.place_name, // optional legacy field for feed text
+        place_name: location.place_name,
+        lat: location.lat,
+        lng: location.lng,
         visibility,
         type: selectedType,
         distance,
@@ -93,7 +103,7 @@ export default function ActivityForm({ onCreated }) {
       setTitle("");
       setDate("");
       setTime("");
-      setLocation("");
+      setLocation({ place_name: "", lat: undefined, lng: undefined });
       setDistance("");
       setMaxParticipants(2);
       setDescription("");
@@ -198,24 +208,7 @@ export default function ActivityForm({ onCreated }) {
         </div>
 
         {/* Location */}
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="location">
-            Location <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="location"
-            type="text"
-            className="w-full p-2 border border-gray-300 rounded"
-            placeholder="e.g. Central Park, NY"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            onBlur={() => handleBlur("location")}
-            required
-          />
-          {touched.location && !location && (
-            <span className="text-xs text-red-500">Location is required</span>
-          )}
-        </div>
+        <LocationInput value={location} onChange={setLocation} required />
 
         {/* Distance & Max */}
         <div className="flex gap-4">
