@@ -1,10 +1,9 @@
-import { Home, Plus, User, Users } from "lucide-react";
+import { Home, Plus, Users } from "lucide-react";
 
 export default function NavigationFooter({
   onClickingCreate,
   onClickingFeed,
   onClickingFriends,
-  onClickingProfile,
   selectedButton,
 }) {
   return (
@@ -36,15 +35,6 @@ export default function NavigationFooter({
         >
           <Users className="h-6 w-6" />
           <p>Friends</p>
-        </button>
-        <button
-          onClick={onClickingProfile}
-          className={`w-20 p-3 flex flex-col items-center rounded-xl hover:bg-purple-500  hover:text-white ${
-            selectedButton === "profile" ? "bg-purple-500 text-white" : ""
-          }`}
-        >
-          <User className="h-6 w-6" />
-          <p>Profile</p>
         </button>
       </div>
     </footer>

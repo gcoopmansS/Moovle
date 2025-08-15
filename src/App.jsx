@@ -7,6 +7,7 @@ import Header from "./components/Header";
 import NavigationFooter from "./components/NavigationFooter";
 import ActivityForm from "./components/ActivityForm";
 import Friends from "./components/Friends";
+import ProfilePage from "./components/ProfilePage";
 
 function App() {
   const { user, loading, signOut } = useSupabaseAuth();
@@ -25,15 +26,7 @@ function App() {
     } else if (selectedButton === "friends") {
       return <Friends />;
     } else if (selectedButton === "profile") {
-      return (
-        <div className="p-4">
-          <h2 className="text-xl font-semibold mb-2">Profile</h2>
-          <div className="text-gray-700 mb-4">{user.email ?? user.id}</div>
-          <button className="px-3 py-2 border rounded" onClick={signOut}>
-            Sign out
-          </button>
-        </div>
-      );
+      return <ProfilePage />;
     }
   }
 
@@ -41,15 +34,26 @@ function App() {
     setSelectedButton(buttonClicked);
   }
 
+  function handleProfileClick() {
+    setSelectedButton("profile");
+  }
+
+  async function handleSignOut() {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header />
+      <Header onProfileClick={handleProfileClick} onSignOut={handleSignOut} />
       <main className="pt-16 pb-20">{renderMainContent()}</main>
       <NavigationFooter
         onClickingCreate={() => handleFooterClick("create")}
         onClickingFeed={() => handleFooterClick("feed")}
         onClickingFriends={() => handleFooterClick("friends")}
-        onClickingProfile={() => handleFooterClick("profile")}
         selectedButton={selectedButton}
       />
     </div>
