@@ -54,7 +54,7 @@ export default function LocationInput({
           context: f.properties?.osm?.type || f.properties?.type || "",
         }));
         setSuggestions(items);
-      } catch (_) {
+      } catch {
         // ignore (aborted / offline)
         setSuggestions([]);
       } finally {

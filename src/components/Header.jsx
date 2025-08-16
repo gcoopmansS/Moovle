@@ -7,9 +7,29 @@ import {
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
-export default function Header({ children, onProfileClick, onSignOut }) {
+export default function Header({ children, onProfileClick, onSignOut, user }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const menuRef = useRef(null);
+
+  // Generate initials from display name for fallback avatar
+  const getInitials = (name) => {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Reset avatar error when user changes
+  useEffect(() => {
+    setAvatarError(false);
+    if (user?.avatar_url) {
+      console.log("Header avatar URL:", user.avatar_url);
+    }
+  }, [user?.avatar_url]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -49,20 +69,30 @@ export default function Header({ children, onProfileClick, onSignOut }) {
           <div className="relative" ref={menuRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className={`p-2.5 rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 relative group ${
+              className={`relative rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 ${
                 showProfileMenu
-                  ? "text-purple-600 bg-purple-50 shadow-sm"
-                  : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+                  ? "shadow-sm ring-2 ring-purple-200"
+                  : "hover:shadow-md"
               }`}
             >
-              <UserCircleIcon className="h-5 w-5" />
-              <div
-                className={`absolute inset-0 rounded-xl bg-purple-100 transition-opacity duration-200 ${
-                  showProfileMenu
-                    ? "opacity-20"
-                    : "opacity-0 group-hover:opacity-20"
-                }`}
-              ></div>
+              {/* User Avatar */}
+              {user?.avatar_url && !avatarError ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.display_name || "User"}
+                  className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm"
+                  onError={() => setAvatarError(true)}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-sm border-2 border-white">
+                  <span className="text-white text-sm font-semibold">
+                    {getInitials(user?.display_name || user?.email)}
+                  </span>
+                </div>
+              )}
+
+              {/* Online indicator */}
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
             </button>
 
             {showProfileMenu && (

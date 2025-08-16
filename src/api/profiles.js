@@ -24,3 +24,18 @@ export async function searchProfiles(query, excludeIds = [], limit = 10) {
   if (error) throw error;
   return data ?? [];
 }
+
+export async function updateProfileAvatar(url) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error("Not authenticated");
+  const { error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: url })
+    .eq("id", user.id);
+  if (error) throw error;
+}
+
+export function avatarFilePath(userId, fileExt) {
+  // keep one file per user, or use a uuid if you want history
+  return `${userId}/avatar.${fileExt}`;
+}

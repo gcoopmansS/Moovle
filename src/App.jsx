@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSupabaseAuth } from "./hooks/useSupabaseAuth";
+import { supabase } from "./lib/supabase";
 import AuthPage from "./pages/AuthPage";
 
 import ActivityFeed from "./components/ActivityFeed";
@@ -12,6 +13,56 @@ import ProfilePage from "./components/ProfilePage";
 function App() {
   const { user, loading, signOut } = useSupabaseAuth();
   const [selectedButton, setSelectedButton] = useState("feed");
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Fetch user profile data
+  const fetchUserProfile = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, avatar_url")
+        .eq("id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") {
+        console.error("Error fetching profile:", error);
+        return;
+      }
+
+      if (data) {
+        let avatarUrl = data.avatar_url;
+
+        // If avatar_url exists and looks like a storage path (not a full URL),
+        // generate a fresh signed URL
+        if (avatarUrl && !avatarUrl.startsWith("http")) {
+          try {
+            const { data: signed, error: signErr } = await supabase.storage
+              .from("avatars")
+              .createSignedUrl(avatarUrl, 60 * 60 * 24); // 24 hours
+            if (!signErr && signed?.signedUrl) {
+              avatarUrl = signed.signedUrl;
+            }
+          } catch (signError) {
+            console.error("Error generating signed URL:", signError);
+            // Keep the original path, fallback will handle it
+          }
+        }
+
+        setUserProfile({
+          ...data,
+          avatar_url: avatarUrl,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
 
   if (loading) return <div className="p-6">Loading…</div>;
   if (!user) return <AuthPage />;
@@ -26,7 +77,7 @@ function App() {
     } else if (selectedButton === "friends") {
       return <Friends />;
     } else if (selectedButton === "profile") {
-      return <ProfilePage />;
+      return <ProfilePage onProfileUpdate={fetchUserProfile} />;
     }
   }
 
@@ -48,7 +99,15 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header onProfileClick={handleProfileClick} onSignOut={handleSignOut} />
+      <Header
+        onProfileClick={handleProfileClick}
+        onSignOut={handleSignOut}
+        user={{
+          ...user,
+          display_name: userProfile?.display_name,
+          avatar_url: userProfile?.avatar_url,
+        }}
+      />
       <main className="pt-16 pb-20">{renderMainContent()}</main>
       <NavigationFooter
         onClickingCreate={() => handleFooterClick("create")}

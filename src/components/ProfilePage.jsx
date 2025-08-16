@@ -1,17 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { supabase } from "../lib/supabase";
 import { Camera, Save, User, LogOut } from "lucide-react";
 
-export default function ProfilePage() {
+export default function ProfilePage({ onProfileUpdate }) {
   const { user, signOut } = useSupabaseAuth();
-  const [profile, setProfile] = useState({
-    display_name: "",
-    avatar_url: "",
-  });
+  const [profile, setProfile] = useState({ display_name: "", avatar_url: "" });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const fileRef = useRef(null);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -22,27 +21,36 @@ export default function ProfilePage() {
         .eq("id", user.id)
         .single();
 
-      if (error && error.code !== "PGRST116") {
-        throw error;
-      }
+      if (error && error.code !== "PGRST116") throw error;
 
       if (data) {
         setProfile({
           display_name: data.display_name || "",
           avatar_url: data.avatar_url || "",
         });
+      } else {
+        // ensure there is at least a row for the user (optional)
+        await supabase
+          .from("profiles")
+          .upsert(
+            { id: user.id, display_name: user.email?.split("@")[0] || "User" },
+            { onConflict: "id" }
+          );
+        setProfile((p) => ({
+          ...p,
+          display_name: user.email?.split("@")[0] || "User",
+        }));
       }
     } catch (error) {
       console.error("Error loading profile:", error);
+      setMessage("Failed to load profile");
     } finally {
       setLoading(false);
     }
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
+    if (user) loadProfile();
   }, [user, loadProfile]);
 
   async function saveProfile(e) {
@@ -55,24 +63,92 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       setMessage("");
-
       const { error } = await supabase.from("profiles").upsert(
         {
           id: user.id,
           display_name: profile.display_name.trim(),
-          avatar_url: profile.avatar_url,
+          avatar_url: profile.avatar_url || null,
         },
-        {
-          onConflict: "id",
-        }
+        { onConflict: "id" }
       );
-
       if (error) throw error;
       setMessage("Profile saved successfully!");
+
+      // Notify parent component to refresh the user profile
+      if (onProfileUpdate) {
+        onProfileUpdate();
+      }
     } catch (error) {
-      setMessage("Error saving profile: " + error.message);
+      setMessage(
+        "Error saving profile: " + (error?.message || "Unknown error")
+      );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onPickFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // basic validation
+    if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
+      setMessage("Please choose an image (png, jpg, webp, gif).");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      setMessage("Max image size is 3MB.");
+      return;
+    }
+
+    setUploading(true);
+    setMessage("");
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${user.id}/avatar.${ext}`;
+
+      // Upload (overwrite previous)
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true, cacheControl: "3600" });
+      if (uploadErr) throw uploadErr;
+
+      // If bucket is PRIVATE, use signed URL instead:
+      const { data: signed, error: signErr } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+      if (signErr) throw signErr;
+      const publicUrl = signed.signedUrl;
+
+      console.log("Generated signed avatar URL:", publicUrl);
+      console.log("Upload path:", path);
+
+      // If bucket is PUBLIC:
+      // const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // const publicUrl = pub?.publicUrl;
+
+      // Persist on profile
+      const { error: upErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+      if (upErr) throw upErr;
+
+      // Update UI
+      setProfile((p) => ({ ...p, avatar_url: publicUrl }));
+      setMessage("Avatar updated!");
+
+      // Notify parent component to refresh the user profile
+      if (onProfileUpdate) {
+        onProfileUpdate();
+      }
+    } catch (err) {
+      console.error(err);
+      setMessage("Upload failed: " + (err?.message || "Unknown error"));
+    } finally {
+      setUploading(false);
+      // reset the input so picking the same file again re-triggers change
+      if (fileRef.current) fileRef.current.value = "";
     }
   }
 
@@ -107,14 +183,29 @@ export default function ProfilePage() {
                   <User className="w-12 h-12 text-gray-400" />
                 </div>
               )}
+
               <button
                 type="button"
-                className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors"
+                onClick={() => fileRef.current?.click()}
+                className="absolute bottom-0 right-0 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors disabled:opacity-60"
+                disabled={uploading}
+                title="Change photo"
               >
                 <Camera className="w-4 h-4" />
               </button>
+
+              {/* hidden file input */}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={onPickFile}
+              />
             </div>
-            <p className="text-sm text-gray-500 mt-2">Click to change photo</p>
+            <p className="text-sm text-gray-500 mt-2">
+              {uploading ? "Uploading…" : "Click the camera to change photo"}
+            </p>
           </div>
 
           {/* Profile Information */}
@@ -138,6 +229,7 @@ export default function ProfilePage() {
               />
             </div>
 
+            {/* You can keep this if you want to support pasting an external URL; otherwise remove it */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Avatar URL (optional)
@@ -154,6 +246,9 @@ export default function ProfilePage() {
                   }))
                 }
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Tip: use the camera button to upload a photo.
+              </p>
             </div>
 
             <div>
@@ -186,7 +281,8 @@ export default function ProfilePage() {
           {message && (
             <div
               className={`text-center text-sm ${
-                message.includes("successfully")
+                message.toLowerCase().includes("success") ||
+                message.toLowerCase().includes("updated")
                   ? "text-green-600"
                   : "text-red-600"
               }`}
@@ -196,7 +292,7 @@ export default function ProfilePage() {
           )}
         </form>
 
-        {/* Sign Out Section */}
+        {/* Sign Out */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={signOut}

@@ -5,6 +5,7 @@ import {
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
 import { Calendar, MapPin, Clock2, UsersRound, User } from "lucide-react";
+import { useState } from "react";
 
 export default function ActivityCard({
   activity,
@@ -12,7 +13,9 @@ export default function ActivityCard({
   busy,
   onJoin,
   onLeave,
+  isOwnActivity = false, // New prop to indicate if this is user's own activity
 }) {
+  const [avatarError, setAvatarError] = useState(false);
   const icons = {
     running: <LiaRunningSolid className="size-8" />,
     cycling: <LiaBikingSolid className="size-8" />,
@@ -62,11 +65,12 @@ export default function ActivityCard({
             <div className="flex items-center gap-3">
               {/* Avatar */}
               <div className="relative">
-                {activity.creator?.avatar_url ? (
+                {activity.creator?.avatar_url && !avatarError ? (
                   <img
                     src={activity.creator.avatar_url}
                     alt={activity.creator.display_name}
                     className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
@@ -161,23 +165,44 @@ export default function ActivityCard({
           </div>
         </div>
 
-        {/* Action Button */}
-        {joined ? (
-          <button
-            disabled={busy}
-            className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none"
-            onClick={onLeave}
-          >
-            {busy ? "Leaving..." : "Leave"}
-          </button>
+        {/* Action Button or Participant Management */}
+        {isOwnActivity ? (
+          // For own activities: Show participant management
+          <div className="flex items-center gap-3">
+            {(activity.participants?.length ??
+              activity.participant_count ??
+              0) > 0 ? (
+              <button className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium rounded-lg transition-all duration-200 flex items-center gap-2">
+                <UsersRound className="size-4" />
+                View Participants
+              </button>
+            ) : (
+              <div className="px-4 py-2 bg-gray-50 text-gray-500 font-medium rounded-lg">
+                No participants yet
+              </div>
+            )}
+          </div>
         ) : (
-          <button
-            disabled={busy}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none shadow-lg hover:shadow-xl"
-            onClick={onJoin}
-          >
-            {busy ? "Joining..." : "Join Activity"}
-          </button>
+          // For others' activities: Show join/leave buttons
+          <>
+            {joined ? (
+              <button
+                disabled={busy}
+                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none"
+                onClick={onLeave}
+              >
+                {busy ? "Leaving..." : "Leave"}
+              </button>
+            ) : (
+              <button
+                disabled={busy}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none shadow-lg hover:shadow-xl"
+                onClick={onJoin}
+              >
+                {busy ? "Joining..." : "Join Activity"}
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -1,13 +1,18 @@
 import { supabase } from "../lib/supabase";
 
-export async function fetchFeed({ sinceHours = 6 } = {}) {
-  const since = new Date(Date.now() - sinceHours * 3600 * 1000).toISOString();
+export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
+  const now = new Date().toISOString();
+  const future = new Date(
+    Date.now() + daysAhead * 24 * 3600 * 1000
+  ).toISOString();
 
-  // First, get activities
+  // Get activities excluding the current user's own activities
   const { data: activities, error } = await supabase
     .from("activities")
     .select("*")
-    .gte("starts_at", since)
+    .gte("starts_at", now)
+    .lte("starts_at", future)
+    .neq("creator_id", currentUserId) // Exclude current user's activities
     .order("starts_at", { ascending: true });
   if (error) throw error;
 
@@ -39,6 +44,36 @@ export async function fetchFeed({ sinceHours = 6 } = {}) {
   }));
 
   return transformedData;
+}
+
+export async function fetchMyActivities({
+  daysAhead = 14,
+  currentUserId,
+} = {}) {
+  const now = new Date().toISOString();
+  const future = new Date(
+    Date.now() + daysAhead * 24 * 3600 * 1000
+  ).toISOString();
+
+  // Get only the current user's activities
+  const { data: activities, error } = await supabase
+    .from("activities")
+    .select("*")
+    .gte("starts_at", now)
+    .lte("starts_at", future)
+    .eq("creator_id", currentUserId) // Only current user's activities
+    .order("starts_at", { ascending: true });
+  if (error) throw error;
+
+  if (!activities || activities.length === 0) {
+    return [];
+  }
+
+  // For user's own activities, we don't need to fetch creator profile since it's the current user
+  return activities.map((activity) => ({
+    ...activity,
+    creator: null, // We can handle this in the UI to show "You" or current user info
+  }));
 }
 
 export async function createActivity({
@@ -74,6 +109,19 @@ export async function createActivity({
 }
 
 export async function joinActivity({ activity_id, user_id }) {
+  // First, check if the user is trying to join their own activity
+  const { data: activity, error: activityError } = await supabase
+    .from("activities")
+    .select("creator_id")
+    .eq("id", activity_id)
+    .single();
+
+  if (activityError) throw activityError;
+
+  if (activity.creator_id === user_id) {
+    throw new Error("You cannot join your own activity");
+  }
+
   const { error } = await supabase.from("activity_participants").insert({
     activity_id,
     user_id,
