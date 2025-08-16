@@ -54,7 +54,7 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button className="p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
             <Bell className="h-5 w-5" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
@@ -65,6 +65,13 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
             <MessageCircle className="h-5 w-5" />
             <div className="absolute inset-0 rounded-xl bg-green-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
           </button>
+
+          {/* User Greeting */}
+          <div className="hidden sm:flex items-center text-gray-700">
+            <span className="text-sm font-medium">
+              Hi, {user?.display_name || user?.email?.split("@")[0] || "User"}
+            </span>
+          </div>
 
           <div className="relative" ref={menuRef}>
             <button
@@ -80,19 +87,16 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
                 <img
                   src={user.avatar_url}
                   alt={user.display_name || "User"}
-                  className="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
                   onError={() => setAvatarError(true)}
                 />
               ) : (
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-sm border-2 border-white">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-sm border-2 border-white">
                   <span className="text-white text-sm font-semibold">
                     {getInitials(user?.display_name || user?.email)}
                   </span>
                 </div>
               )}
-
-              {/* Online indicator */}
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
             </button>
 
             {showProfileMenu && (

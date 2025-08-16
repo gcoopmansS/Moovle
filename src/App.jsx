@@ -22,7 +22,9 @@ function App() {
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select(
+          "display_name, avatar_url, location, location_lat, location_lng"
+        )
         .eq("id", user.id)
         .single();
 

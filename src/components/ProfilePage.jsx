@@ -2,10 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { supabase } from "../lib/supabase";
 import { Camera, Save, User, LogOut } from "lucide-react";
+import LocationInput from "./LocationInput";
 
 export default function ProfilePage({ onProfileUpdate }) {
   const { user, signOut } = useSupabaseAuth();
-  const [profile, setProfile] = useState({ display_name: "", avatar_url: "" });
+  const [profile, setProfile] = useState({
+    display_name: "",
+    avatar_url: "",
+    location: null, // Will be { place_name, lat, lng } or null
+  });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -17,16 +22,29 @@ export default function ProfilePage({ onProfileUpdate }) {
       setLoading(true);
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url")
+        .select(
+          "display_name, avatar_url, location, location_lat, location_lng"
+        )
         .eq("id", user.id)
         .single();
 
       if (error && error.code !== "PGRST116") throw error;
 
       if (data) {
+        // Convert location data to LocationInput format
+        let locationObj = null;
+        if (data.location) {
+          locationObj = {
+            place_name: data.location,
+            lat: data.location_lat || null,
+            lng: data.location_lng || null,
+          };
+        }
+
         setProfile({
           display_name: data.display_name || "",
           avatar_url: data.avatar_url || "",
+          location: locationObj,
         });
       } else {
         // ensure there is at least a row for the user (optional)
@@ -68,6 +86,9 @@ export default function ProfilePage({ onProfileUpdate }) {
           id: user.id,
           display_name: profile.display_name.trim(),
           avatar_url: profile.avatar_url || null,
+          location: profile.location?.place_name || null,
+          location_lat: profile.location?.lat || null,
+          location_lng: profile.location?.lng || null,
         },
         { onConflict: "id" }
       );
@@ -229,25 +250,21 @@ export default function ProfilePage({ onProfileUpdate }) {
               />
             </div>
 
-            {/* You can keep this if you want to support pasting an external URL; otherwise remove it */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Avatar URL (optional)
-              </label>
-              <input
-                type="url"
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="https://example.com/avatar.jpg"
-                value={profile.avatar_url}
-                onChange={(e) =>
+              <LocationInput
+                value={profile.location}
+                onChange={(locationData) =>
                   setProfile((prev) => ({
                     ...prev,
-                    avatar_url: e.target.value,
+                    location: locationData,
                   }))
                 }
+                required={false}
+                label="Location"
+                placeholder="Where are you from? (e.g., New York, Berlin, Tokyo)"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Tip: use the camera button to upload a photo.
+                Help other sports buddies find you nearby
               </p>
             </div>
 
