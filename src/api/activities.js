@@ -1,5 +1,62 @@
 import { supabase } from "../lib/supabase";
 
+// Helper function to fetch participant data for activities
+async function fetchParticipantsForActivities(activityIds) {
+  if (!activityIds || activityIds.length === 0) {
+    return {};
+  }
+
+  // Fetch participants for these activities
+  const { data: participants, error: participantsError } = await supabase
+    .from("activity_participants")
+    .select("activity_id, user_id")
+    .in("activity_id", activityIds);
+  if (participantsError) throw participantsError;
+
+  // Only fetch profiles if we have participants
+  if (!participants || participants.length === 0) {
+    return {};
+  }
+
+  // Get unique participant user IDs (excluding duplicates)
+  const participantUserIds = [...new Set(participants.map((p) => p.user_id))];
+
+  // Batch fetch all participant profiles
+  const { data: participantProfiles, error: participantProfilesError } =
+    await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", participantUserIds);
+  if (participantProfilesError) throw participantProfilesError;
+
+  // Create a map of participant profiles by ID for O(1) lookups
+  const participantProfilesMap = (participantProfiles || []).reduce(
+    (acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    },
+    {}
+  );
+
+  // Group participants by activity with profile data
+  return participants.reduce((acc, participant) => {
+    const activityId = participant.activity_id;
+    const userProfile = participantProfilesMap[participant.user_id];
+
+    if (!acc[activityId]) acc[activityId] = [];
+
+    // Only add if we found the profile (graceful handling of missing profiles)
+    if (userProfile) {
+      acc[activityId].push({
+        id: participant.user_id,
+        display_name: userProfile.display_name,
+        avatar_url: userProfile.avatar_url,
+      });
+    }
+    return acc;
+  }, {});
+}
+
 export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
   const now = new Date().toISOString();
   const future = new Date(
@@ -37,10 +94,17 @@ export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
       return acc;
     }, {}) || {};
 
-  // Transform the data to include creator info
+  // Get participant data for all activities using helper function
+  const participantsByActivity = await fetchParticipantsForActivities(
+    activities.map((a) => a.id)
+  );
+
+  // Transform the data to include creator info and participant data
   const transformedData = activities.map((activity) => ({
     ...activity,
     creator: profilesMap[activity.creator_id],
+    participants: participantsByActivity[activity.id] || [],
+    participant_count: (participantsByActivity[activity.id] || []).length,
   }));
 
   return transformedData;
@@ -69,10 +133,17 @@ export async function fetchMyActivities({
     return [];
   }
 
-  // For user's own activities, we don't need to fetch creator profile since it's the current user
+  // Get participant data for all activities using helper function
+  const participantsByActivity = await fetchParticipantsForActivities(
+    activities.map((a) => a.id)
+  );
+
+  // For user's own activities, include participant data
   return activities.map((activity) => ({
     ...activity,
     creator: null, // We can handle this in the UI to show "You" or current user info
+    participants: participantsByActivity[activity.id] || [],
+    participant_count: (participantsByActivity[activity.id] || []).length,
   }));
 }
 
