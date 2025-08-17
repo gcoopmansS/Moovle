@@ -5,10 +5,29 @@ import {
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
 import { MapPin, UsersRound } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export default function MyActivityCard({ activity, isNext = false }) {
   const [avatarError, setAvatarError] = useState(false);
+  const [showParticipants, setShowParticipants] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowParticipants(false);
+      }
+    }
+
+    if (showParticipants) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showParticipants]);
 
   const icons = {
     running: <LiaRunningSolid className="size-5" />,
@@ -62,25 +81,29 @@ export default function MyActivityCard({ activity, isNext = false }) {
 
   return (
     <div
-      className={`relative bg-gradient-to-r rounded-xl p-4 border-2 transition-all duration-200 hover:shadow-lg ${
-        isNext
-          ? "from-blue-50 via-purple-50 to-indigo-50 border-blue-300 shadow-md ring-2 ring-blue-200/50"
-          : "from-emerald-50 via-teal-50 to-cyan-50 border-emerald-300 hover:border-emerald-400"
+      className={`relative bg-white border border-gray-100 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
+        isNext ? "shadow-md ring-1 ring-blue-100/50" : "shadow-sm"
       }`}
     >
-      {/* Distinctive "YOUR ACTIVITY" badge */}
-      <div className="absolute -top-2.5 left-4 px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-full shadow-md uppercase tracking-wide">
+      {/* Your Activity badge - consistent styling */}
+      <div
+        className={`absolute -top-2.5 left-4 px-3 py-1 text-white text-xs font-semibold rounded-full shadow-sm uppercase tracking-wide ${
+          isNext
+            ? "bg-gradient-to-r from-blue-500 to-indigo-600"
+            : "bg-gradient-to-r from-gray-600 to-gray-700"
+        }`}
+      >
         {isNext ? "🚀 Next Activity" : "✨ Your Activity"}
       </div>
 
       <div className="flex items-center justify-between pt-1">
         {/* Left side - Activity info with more emphasis */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          {/* More prominent sport icon */}
+          {/* Sport icon - consistent with ActivityCard */}
           <div
-            className={`p-2.5 rounded-xl shadow-sm border ${
+            className={`p-2.5 rounded-xl ${
               iconColors[activity.type] || "text-gray-500 bg-gray-50"
-            } ${isNext ? "ring-2 ring-blue-200" : "ring-1 ring-emerald-200"}`}
+            }`}
           >
             {icons[activity.type] || icons.running}
           </div>
@@ -111,35 +134,82 @@ export default function MyActivityCard({ activity, isNext = false }) {
           </div>
         </div>
 
-        {/* Right side - Even more prominent participant status */}
+        {/* Participant status - clickable to view details */}
         <div
-          className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 shadow-sm transition-all ${
-            hasParticipants
-              ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 text-green-900"
-              : "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300 text-amber-900"
-          }`}
+          className="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100 transition-all cursor-pointer hover:bg-gray-100"
+          onClick={() => hasParticipants && setShowParticipants(true)}
         >
-          {/* Enhanced participant count */}
-          <div className="text-center">
-            <div className="flex items-center gap-1.5">
-              <div
-                className={`p-1.5 rounded-lg ${
-                  hasParticipants ? "bg-green-100" : "bg-amber-100"
-                }`}
-              >
-                <UsersRound
-                  className={`h-4 w-4 ${
-                    hasParticipants ? "text-green-700" : "text-amber-700"
-                  }`}
-                />
+          {/* Participant count */}
+          <div className="text-center relative" ref={dropdownRef}>
+            <div
+              className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+              onClick={() => setShowParticipants(!showParticipants)}
+            >
+              <div className="p-1.5 bg-white rounded-lg shadow-sm">
+                <UsersRound className="h-4 w-4 text-gray-600" />
               </div>
-              <span className="font-black text-xl leading-none">
+              <span className="font-bold text-lg leading-none text-gray-900">
                 {activity.participant_count || 0}
               </span>
             </div>
-            <p className="text-xs font-bold mt-1 uppercase tracking-wide">
-              {hasParticipants ? "Joined!" : "Waiting"}
+            <p className="text-xs font-semibold mt-1 text-gray-500 uppercase tracking-wide">
+              {hasParticipants ? "Joined" : "Waiting"}
             </p>
+
+            {/* Participants Dropdown */}
+            {showParticipants && hasParticipants && (
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-48 max-w-64">
+                <div className="p-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                    Participants ({activity.participant_count})
+                  </h4>
+                  {activity.participants && activity.participants.length > 0 ? (
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {activity.participants.map((participant, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          {participant.avatar_url ? (
+                            <img
+                              src={participant.avatar_url}
+                              alt={participant.display_name || "Participant"}
+                              className="w-6 h-6 rounded-full object-cover border border-gray-100"
+                              onError={(e) => {
+                                // Fallback to colored circle if image fails to load
+                                e.target.style.display = "none";
+                                e.target.nextSibling.style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          <div
+                            className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
+                            style={{
+                              display: participant.avatar_url ? "none" : "flex",
+                            }}
+                          >
+                            <span className="text-white font-semibold text-xs">
+                              {participant.display_name
+                                ? participant.display_name
+                                    .charAt(0)
+                                    .toUpperCase()
+                                : "U"}
+                            </span>
+                          </div>
+                          <span className="text-gray-700 truncate">
+                            {participant.display_name || "Unknown User"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500">
+                      No participant details available
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Enhanced participant avatars */}
@@ -156,8 +226,8 @@ export default function MyActivityCard({ activity, isNext = false }) {
                         onError={() => setAvatarError(true)}
                       />
                     ) : (
-                      <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
-                        <span className="text-white text-xs font-bold">
+                      <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
+                        <span className="text-white text-xs font-semibold">
                           {getInitials(participant.display_name)}
                         </span>
                       </div>
@@ -165,10 +235,10 @@ export default function MyActivityCard({ activity, isNext = false }) {
                   </div>
                 ))}
 
-              {/* Enhanced +X more indicator */}
+              {/* +X more indicator - consistent styling */}
               {activity.participant_count > 2 && (
-                <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-green-100 to-emerald-100 flex items-center justify-center shadow-sm">
-                  <span className="text-green-800 text-xs font-black">
+                <div className="w-7 h-7 rounded-full border border-white bg-gray-100 flex items-center justify-center shadow-sm">
+                  <span className="text-gray-600 text-xs font-semibold">
                     +{activity.participant_count - 2}
                   </span>
                 </div>
