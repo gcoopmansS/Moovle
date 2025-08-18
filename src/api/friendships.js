@@ -1,10 +1,5 @@
 // src/api/friendships.js
 import { supabase } from "../lib/supabase";
-import {
-  createFriendRequestNotification,
-  createFriendRequestAcceptedNotification,
-} from "./notifications";
-import { getProfilesByIds } from "./profiles";
 
 // Keep edges canonical to avoid duplicates
 function canonical(a, b) {
@@ -31,24 +26,6 @@ export async function sendFriendRequest(meId, otherId) {
 
   // ignore unique violation (already requested)
   if (error && error.code !== "23505") throw error;
-
-  // Only create notification if the friendship was actually created (not a duplicate)
-  if (!error) {
-    try {
-      // Get sender's profile to include name in notification
-      const senderProfiles = await getProfilesByIds([meId]);
-      const senderName = senderProfiles[0]?.display_name || "Someone";
-
-      // Create notification for the recipient
-      await createFriendRequestNotification(otherId, meId, senderName);
-    } catch (notificationError) {
-      console.error(
-        "Failed to create friend request notification:",
-        notificationError
-      );
-      // Don't throw error here - the friend request was successful even if notification failed
-    }
-  }
 }
 
 export async function acceptFriendRequest(meId, otherId) {
@@ -59,21 +36,6 @@ export async function acceptFriendRequest(meId, otherId) {
     .eq("user_a", user_a)
     .eq("user_b", user_b);
   if (error) throw error;
-
-  try {
-    // Get acceptor's profile to include name in notification
-    const acceptorProfiles = await getProfilesByIds([meId]);
-    const acceptorName = acceptorProfiles[0]?.display_name || "Someone";
-
-    // Create notification for the original sender
-    await createFriendRequestAcceptedNotification(otherId, meId, acceptorName);
-  } catch (notificationError) {
-    console.error(
-      "Failed to create friend request accepted notification:",
-      notificationError
-    );
-    // Don't throw error here - the acceptance was successful even if notification failed
-  }
 }
 
 export async function declineFriendRequest(meId, otherId) {

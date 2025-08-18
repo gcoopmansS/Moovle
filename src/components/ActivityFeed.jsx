@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
-import { fetchFeed, fetchMyActivities } from "../api/activities";
+import { fetchMyActivities } from "../api/activities";
 import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
 import ActivityCard from "./ActivityCard";
@@ -15,11 +15,13 @@ export default function ActivityFeed() {
   const [joinedMap, setJoinedMap] = useState({}); // activityId -> true/false
 
   const load = useCallback(async () => {
+    if (!user?.id) return; // Don't load if user is not authenticated
+
     setLoading(true);
     try {
       // Load both available activities (others') and user's own activities
       const [availableData, myData] = await Promise.all([
-        fetchFeed({ currentUserId: user.id }),
+        ActivityService.getActivityFeed({ currentUserId: user.id }),
         fetchMyActivities({ currentUserId: user.id }),
       ]);
 
@@ -52,6 +54,8 @@ export default function ActivityFeed() {
   }, [load]);
 
   async function handleJoin(activityId) {
+    if (!user?.id) return; // Don't proceed if user is not authenticated
+
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
       await ActivityService.joinActivity(activityId, user.id);
@@ -68,6 +72,8 @@ export default function ActivityFeed() {
   }
 
   async function handleLeave(activityId) {
+    if (!user?.id) return; // Don't proceed if user is not authenticated
+
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
       await ActivityService.leaveActivity(activityId, user.id);

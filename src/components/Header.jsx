@@ -6,7 +6,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import NotificationBell from "./NotificationBell";
 
 export default function Header({ children, onProfileClick, onSignOut, user }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -27,9 +26,6 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
   // Reset avatar error when user changes
   useEffect(() => {
     setAvatarError(false);
-    if (user?.avatar_url) {
-      console.log("Header avatar URL:", user.avatar_url);
-    }
   }, [user?.avatar_url]);
 
   // Close menu when clicking outside
@@ -56,8 +52,6 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <NotificationBell />
-
           <button className="p-2.5 rounded-xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
             <MessageCircle className="h-5 w-5" />
             <div className="absolute inset-0 rounded-xl bg-green-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>

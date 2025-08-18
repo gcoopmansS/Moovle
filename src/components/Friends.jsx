@@ -197,7 +197,7 @@ export default function Friends() {
     try {
       await sendFriendRequest(me, otherId);
       await load();
-      // The recipient will get a notification automatically
+      // Send friend request
     } catch (error) {
       console.error("Error sending friend request:", error);
     } finally {
@@ -210,7 +210,7 @@ export default function Friends() {
     try {
       await acceptFriendRequest(me, otherId);
       await load();
-      // The original sender will get a notification automatically
+      // Accept friend request
     } catch (error) {
       console.error("Error accepting friend request:", error);
     } finally {

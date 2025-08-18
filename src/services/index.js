@@ -1,6 +1,6 @@
 // src/services/index.js
-// Central export for all services - makes importing cleaner
-
-export { ActivityService } from "./activityService.js";
-export { FriendshipService } from "./friendshipService.js";
+// Central export point for all services
+export { AuthService } from "./authService.js";
 export { ProfileService } from "./profileService.js";
+export { FriendshipService } from "./friendshipService.js";
+export { ActivityService } from "./activityService.js";
