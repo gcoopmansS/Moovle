@@ -48,6 +48,17 @@ export function useSupabaseAuth() {
     if (error) throw error;
   }
 
+  async function signInWithFacebook() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "facebook",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) console.error(error);
+    return data;
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
   }
@@ -59,6 +70,7 @@ export function useSupabaseAuth() {
     signInWithPassword,
     signUpWithPassword, // optional
     signInWithGoogle,
+    signInWithFacebook, // optional
     signOut,
   };
 }

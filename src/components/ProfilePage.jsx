@@ -17,6 +17,20 @@ export default function ProfilePage({ onProfileUpdate }) {
   const [message, setMessage] = useState("");
   const fileRef = useRef(null);
 
+  // Helper to detect OAuth provider
+  const getOAuthProvider = () => {
+    if (user?.app_metadata?.provider === "google") return "Google";
+    if (user?.app_metadata?.provider === "facebook") return "Facebook";
+    return null;
+  };
+
+  // Helper to check if avatar is from OAuth
+  const isOAuthAvatar = () => {
+    const oauthAvatar =
+      user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+    return profile.avatar_url === oauthAvatar;
+  };
+
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
@@ -41,22 +55,38 @@ export default function ProfilePage({ onProfileUpdate }) {
           };
         }
 
+        // Get OAuth data for fallbacks
+        const oauthDisplayName =
+          user.user_metadata?.full_name || user.user_metadata?.name;
+        const oauthAvatar =
+          user.user_metadata?.avatar_url || user.user_metadata?.picture;
+
         setProfile({
-          display_name: data.display_name || "",
-          avatar_url: data.avatar_url || "",
+          display_name: data.display_name || oauthDisplayName || "",
+          avatar_url: data.avatar_url || oauthAvatar || "",
           location: locationObj,
         });
       } else {
-        // ensure there is at least a row for the user (optional)
-        await supabase
-          .from("profiles")
-          .upsert(
-            { id: user.id, display_name: user.email?.split("@")[0] || "User" },
-            { onConflict: "id" }
-          );
+        // No profile exists - create one with OAuth data if available
+        const oauthDisplayName =
+          user.user_metadata?.full_name || user.user_metadata?.name;
+        const oauthAvatar =
+          user.user_metadata?.avatar_url || user.user_metadata?.picture;
+        const fallbackName =
+          oauthDisplayName || user.email?.split("@")[0] || "User";
+
+        await supabase.from("profiles").upsert(
+          {
+            id: user.id,
+            display_name: fallbackName,
+            avatar_url: oauthAvatar || null,
+          },
+          { onConflict: "id" }
+        );
         setProfile((p) => ({
           ...p,
-          display_name: user.email?.split("@")[0] || "User",
+          display_name: fallbackName,
+          avatar_url: oauthAvatar || "",
         }));
       }
     } catch (error) {
@@ -225,12 +255,30 @@ export default function ProfilePage({ onProfileUpdate }) {
               />
             </div>
             <p className="text-sm text-gray-500 mt-2">
-              {uploading ? "Uploading…" : "Click the camera to change photo"}
+              {uploading
+                ? "Uploading…"
+                : isOAuthAvatar() && getOAuthProvider()
+                ? `Using ${getOAuthProvider()} profile photo - click camera to change`
+                : "Click the camera to change photo"}
             </p>
           </div>
 
           {/* Profile Information */}
           <div className="space-y-4">
+            {/* OAuth Provider Info */}
+            {getOAuthProvider() && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-700">
+                  <span className="font-medium">
+                    Connected via {getOAuthProvider()}
+                  </span>
+                  {(user?.user_metadata?.full_name ||
+                    user?.user_metadata?.name) &&
+                    " - Profile information has been pre-filled from your account"}
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Display Name *
