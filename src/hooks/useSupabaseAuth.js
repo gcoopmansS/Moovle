@@ -37,17 +37,12 @@ export function useSupabaseAuth() {
     if (error) throw error;
   }
 
-  async function signInWithEmail(email) {
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) throw error;
-  }
-
-  async function signInWithGithub() {
+  async function signInWithGoogle() {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
+      provider: "google",
       options: {
         redirectTo: window.location.origin,
-        scopes: "read:user user:email",
+        scopes: "email profile",
       },
     });
     if (error) throw error;
@@ -63,8 +58,7 @@ export function useSupabaseAuth() {
     loading,
     signInWithPassword,
     signUpWithPassword, // optional
-    signInWithEmail,
-    signInWithGithub,
+    signInWithGoogle,
     signOut,
   };
 }
