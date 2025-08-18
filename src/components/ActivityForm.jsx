@@ -32,7 +32,7 @@ const activityTypes = [
   },
 ];
 
-export default function ActivityForm({ onCreated }) {
+export default function ActivityForm() {
   const { user } = useSupabaseAuth();
 
   const [selectedType, setSelectedType] = useState("running");

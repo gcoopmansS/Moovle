@@ -6,6 +6,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import NotificationBell from "./NotificationBell";
 
 export default function Header({ children, onProfileClick, onSignOut, user }) {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -47,19 +48,15 @@ export default function Header({ children, onProfileClick, onSignOut, user }) {
       <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">SB</span>
+            <span className="text-white font-bold text-sm">M</span>
           </div>
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            SportsBuddy
+            Moovle
           </h1>
         </div>
 
         <div className="flex items-center gap-3">
-          <button className="p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
-            <Bell className="h-5 w-5" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>
-            <div className="absolute inset-0 rounded-xl bg-blue-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
-          </button>
+          <NotificationBell />
 
           <button className="p-2.5 rounded-xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
             <MessageCircle className="h-5 w-5" />

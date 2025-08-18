@@ -1,5 +1,5 @@
-import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Search, MapPin } from "lucide-react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import {
   listFriendships,
@@ -7,7 +7,12 @@ import {
   acceptFriendRequest,
   declineFriendRequest,
 } from "../api/friendships";
-import { getProfilesByIds, searchProfiles } from "../api/profiles";
+import {
+  getProfilesByIds,
+  searchProfiles,
+  getProfilesNearLocation,
+} from "../api/profiles";
+import { supabase } from "../lib/supabase";
 
 export default function Friends() {
   const { user, loading } = useSupabaseAuth();
@@ -19,11 +24,14 @@ export default function Friends() {
   const [edges, setEdges] = useState([]);
   const [profilesMap, setProfilesMap] = useState({});
   const [discover, setDiscover] = useState([]);
+  const [nearbyPeople, setNearbyPeople] = useState([]);
+  const [currentUserLocation, setCurrentUserLocation] = useState(null);
   const [listLoading, setListLoading] = useState(true);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
   const [busyIds, setBusyIds] = useState({});
 
   // Always define effects (they can no-op when not ready)
-  async function load() {
+  const load = useCallback(async () => {
     if (!me) return;
     setListLoading(true);
     try {
@@ -43,10 +51,37 @@ export default function Friends() {
     } finally {
       setListLoading(false);
     }
-  }
-  useEffect(() => {
-    if (me) load();
   }, [me]);
+
+  const loadCurrentUserLocation = useCallback(async () => {
+    if (!me) return;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("location_lat, location_lng, location")
+        .eq("id", me)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.location_lat && data?.location_lng) {
+        setCurrentUserLocation({
+          lat: data.location_lat,
+          lng: data.location_lng,
+          location: data.location,
+        });
+      }
+    } catch (error) {
+      console.error("Error loading user location:", error);
+    }
+  }, [me]);
+
+  useEffect(() => {
+    if (me) {
+      load();
+      loadCurrentUserLocation();
+    }
+  }, [me, load, loadCurrentUserLocation]);
 
   // ❗ Call all memos unconditionally
   const acceptedFriendIds = useMemo(
@@ -76,12 +111,52 @@ export default function Friends() {
   const excludeIds = useMemo(() => {
     const set = new Set();
     if (me) set.add(me);
-    edges.forEach((f) => {
-      set.add(f.user_a);
-      set.add(f.user_b);
-    });
+
+    // Exclude users with accepted friendships (already friends)
+    edges
+      .filter((f) => f.status === "accepted")
+      .forEach((f) => {
+        set.add(f.user_a);
+        set.add(f.user_b);
+      });
+
+    // Exclude users with incoming pending requests (requests sent TO us)
+    // But keep users with outgoing pending requests (requests sent BY us) so they can show "Request sent"
+    edges
+      .filter((f) => f.status === "pending" && f.requested_by !== me)
+      .forEach((f) => {
+        set.add(f.user_a);
+        set.add(f.user_b);
+      });
+
     return Array.from(set).filter(Boolean);
   }, [edges, me]);
+
+  const loadNearbyPeople = useCallback(async () => {
+    if (!currentUserLocation || !me) return;
+
+    setNearbyLoading(true);
+    try {
+      const nearbyProfiles = await getProfilesNearLocation(
+        currentUserLocation.lat,
+        currentUserLocation.lng,
+        50, // 50km radius
+        excludeIds,
+        20 // limit to 20 people
+      );
+      setNearbyPeople(nearbyProfiles);
+    } catch (error) {
+      console.error("Error loading nearby people:", error);
+    } finally {
+      setNearbyLoading(false);
+    }
+  }, [currentUserLocation, me, excludeIds]);
+
+  useEffect(() => {
+    if (currentUserLocation && activeTab === "discover") {
+      loadNearbyPeople();
+    }
+  }, [currentUserLocation, excludeIds, activeTab, loadNearbyPeople]);
 
   const filteredFriends = useMemo(
     () =>
@@ -94,6 +169,17 @@ export default function Friends() {
             .includes(searchQuery.toLowerCase())
         ),
     [acceptedFriendIds, profilesMap, searchQuery]
+  );
+
+  // Helper function to check if we have a pending outgoing request to this user
+  const hasPendingRequestTo = useCallback(
+    (userId) => {
+      return outgoing.some((f) => {
+        const other = f.user_a === me ? f.user_b : f.user_a;
+        return other === userId;
+      });
+    },
+    [outgoing, me]
   );
 
   // Handlers (no hooks inside)
@@ -111,24 +197,34 @@ export default function Friends() {
     try {
       await sendFriendRequest(me, otherId);
       await load();
+      // The recipient will get a notification automatically
+    } catch (error) {
+      console.error("Error sending friend request:", error);
     } finally {
       setBusyIds((s) => ({ ...s, [otherId]: false }));
     }
   }
+
   async function handleAccept(otherId) {
     setBusyIds((s) => ({ ...s, [otherId]: true }));
     try {
       await acceptFriendRequest(me, otherId);
       await load();
+      // The original sender will get a notification automatically
+    } catch (error) {
+      console.error("Error accepting friend request:", error);
     } finally {
       setBusyIds((s) => ({ ...s, [otherId]: false }));
     }
   }
+
   async function handleDecline(otherId) {
     setBusyIds((s) => ({ ...s, [otherId]: true }));
     try {
       await declineFriendRequest(me, otherId);
       await load();
+    } catch (error) {
+      console.error("Error declining friend request:", error);
     } finally {
       setBusyIds((s) => ({ ...s, [otherId]: false }));
     }
@@ -321,46 +417,130 @@ export default function Friends() {
           ) : (
             // Discover
             <div>
-              {searchQuery.trim().length === 0 ? (
-                <div className="text-gray-500 text-center py-8">
-                  Search to discover people.
+              {/* Show nearby people first, then search results */}
+              {!currentUserLocation ? (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <div className="text-gray-500 mb-2">
+                    Add your location in Profile to discover nearby sports
+                    buddies
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Or search for people by name below
+                  </div>
                 </div>
-              ) : discover.length === 0 ? (
+              ) : nearbyLoading ? (
                 <div className="text-gray-500 text-center py-8">
-                  No results.
+                  Finding nearby sports buddies...
+                </div>
+              ) : searchQuery.trim().length > 0 ? (
+                // Show search results when searching
+                discover.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">
+                    No search results found.
+                  </div>
+                ) : (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-600 mb-3">
+                      Search Results
+                    </h4>
+                    <ul className="divide-y divide-gray-100">
+                      {discover.map((p) => (
+                        <li key={p.id} className="py-3 flex items-center gap-3">
+                          <img
+                            src={
+                              p.avatar_url ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                p.display_name || "User"
+                              )}&background=0D8ABC&color=fff`
+                            }
+                            alt={p.display_name || "User"}
+                            className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-gray-800 text-base">
+                              {p.display_name || "User"}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                              {p.id.slice(0, 8)}
+                            </span>
+                          </div>
+                          {hasPendingRequestTo(p.id) ? (
+                            <span className="ml-auto bg-gray-100 text-gray-500 px-3 py-1 rounded-lg text-xs cursor-not-allowed">
+                              Request sent
+                            </span>
+                          ) : (
+                            <button
+                              className="ml-auto bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
+                              disabled={!!busyIds[p.id]}
+                              onClick={() => handleSend(p.id)}
+                            >
+                              Add
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              ) : nearbyPeople.length === 0 ? (
+                <div className="text-center py-8">
+                  <MapPin className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <div className="text-gray-500 mb-2">
+                    No sports buddies found nearby
+                  </div>
+                  <div className="text-sm text-gray-400">
+                    Try searching for people by name above
+                  </div>
                 </div>
               ) : (
-                <ul className="divide-y divide-gray-100">
-                  {discover.map((p) => (
-                    <li key={p.id} className="py-3 flex items-center gap-3">
-                      <img
-                        src={
-                          p.avatar_url ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            p.display_name || "User"
-                          )}&background=0D8ABC&color=fff`
-                        }
-                        alt={p.display_name || "User"}
-                        className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-800 text-base">
-                          {p.display_name || "User"}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {p.id.slice(0, 8)}
-                        </span>
-                      </div>
-                      <button
-                        className="ml-auto bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
-                        disabled={!!busyIds[p.id]}
-                        onClick={() => handleSend(p.id)}
-                      >
-                        Add
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                // Show nearby people by default
+                <div>
+                  <h4 className="text-sm font-medium text-gray-600 mb-3 flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Nearby Sports Buddies ({currentUserLocation.location})
+                  </h4>
+                  <ul className="divide-y divide-gray-100">
+                    {nearbyPeople.map((p) => (
+                      <li key={p.id} className="py-3 flex items-center gap-3">
+                        <img
+                          src={
+                            p.avatar_url ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              p.display_name || "User"
+                            )}&background=0D8ABC&color=fff`
+                          }
+                          alt={p.display_name || "User"}
+                          className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
+                        />
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-800 text-base">
+                            {p.display_name || "User"}
+                          </span>
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {p.distance
+                              ? `${p.distance.toFixed(1)}km away`
+                              : p.location}
+                          </span>
+                        </div>
+                        {hasPendingRequestTo(p.id) ? (
+                          <span className="ml-auto bg-gray-100 text-gray-500 px-3 py-1 rounded-lg text-xs cursor-not-allowed">
+                            Request sent
+                          </span>
+                        ) : (
+                          <button
+                            className="ml-auto bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
+                            disabled={!!busyIds[p.id]}
+                            onClick={() => handleSend(p.id)}
+                          >
+                            Add
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           )}
