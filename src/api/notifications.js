@@ -8,14 +8,6 @@ export async function createNotification(
   message,
   metadata = {}
 ) {
-  console.log("📧 Creating notification:", {
-    userId,
-    type,
-    title,
-    message,
-    metadata,
-  });
-
   const { data, error } = await supabase
     .from("notifications")
     .insert({
@@ -25,12 +17,10 @@ export async function createNotification(
       message,
       metadata,
       read: false,
-      created_at: new Date().toISOString(),
+      // Let the database set created_at with its default value
     })
     .select()
     .single();
-
-  console.log("📧 Notification insert result:", { data, error });
 
   if (error) throw error;
   return data;
@@ -38,17 +28,23 @@ export async function createNotification(
 
 // Test function to debug notification creation
 export async function testNotificationCreation() {
-  const { data: user } = await supabase.auth.getUser();
-  if (!user.user) {
+  // First check if user is authenticated
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  console.log("🔐 Auth check:", { user: user?.id, authError });
+
+  if (!user) {
     console.log("❌ No authenticated user");
     return;
   }
 
-  console.log("🧪 Testing notification creation for user:", user.user.id);
+  console.log("🧪 Testing notification creation for user:", user.id);
 
   try {
     const result = await createNotification(
-      user.user.id,
+      user.id,
       "test",
       "Test Notification",
       "This is a test notification to debug the system",
@@ -60,6 +56,11 @@ export async function testNotificationCreation() {
     console.error("❌ Test notification failed:", error);
     throw error;
   }
+}
+
+// Make test function available globally for debugging
+if (typeof window !== "undefined") {
+  window.testNotificationCreation = testNotificationCreation;
 }
 
 export async function getUserNotifications(userId, limit = 20) {
@@ -131,4 +132,10 @@ export async function createFriendRequestAcceptedNotification(
     `${acceptorName} accepted your friend request`,
     { acceptor_id: acceptorId, acceptor_name: acceptorName }
   );
+}
+
+// Make test functions available globally for debugging
+if (typeof window !== "undefined") {
+  window.testNotificationCreation = testNotificationCreation;
+  window.createNotification = createNotification;
 }

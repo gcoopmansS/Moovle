@@ -21,8 +21,6 @@ export async function listFriendships(meId) {
 }
 
 export async function sendFriendRequest(meId, otherId) {
-  console.log("🚀 Sending friend request:", { meId, otherId });
-
   const [user_a, user_b] = canonical(meId, otherId);
   const { error } = await supabase.from("friendships").insert({
     user_a,
@@ -31,32 +29,25 @@ export async function sendFriendRequest(meId, otherId) {
     requested_by: meId,
   });
 
-  console.log("📝 Friendship insert result:", { error });
-
   // ignore unique violation (already requested)
   if (error && error.code !== "23505") throw error;
 
   // Only create notification if the friendship was actually created (not a duplicate)
   if (!error) {
     try {
-      console.log("👤 Getting sender profile...");
       // Get sender's profile to include name in notification
       const senderProfiles = await getProfilesByIds([meId]);
       const senderName = senderProfiles[0]?.display_name || "Someone";
 
-      console.log("📧 Creating notification:", { otherId, meId, senderName });
       // Create notification for the recipient
       await createFriendRequestNotification(otherId, meId, senderName);
-      console.log("✅ Notification created successfully");
     } catch (notificationError) {
       console.error(
-        "❌ Failed to create friend request notification:",
+        "Failed to create friend request notification:",
         notificationError
       );
       // Don't throw error here - the friend request was successful even if notification failed
     }
-  } else {
-    console.log("⚠️ Friend request not sent (duplicate or error)");
   }
 }
 
