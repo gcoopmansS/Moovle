@@ -142,7 +142,7 @@ export default function MyActivityCard({ activity, isNext = false }) {
           {/* Participant count */}
           <div className="text-center relative" ref={dropdownRef}>
             <div
-              className="flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-colors"
               onClick={() => setShowParticipants(!showParticipants)}
             >
               <div className="p-1.5 bg-white rounded-lg shadow-sm">

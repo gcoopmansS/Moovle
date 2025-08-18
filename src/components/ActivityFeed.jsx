@@ -1,11 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
-import {
-  fetchFeed,
-  fetchMyActivities,
-  joinActivity,
-  leaveActivity,
-} from "../api/activities";
+import { fetchFeed, fetchMyActivities } from "../api/activities";
+import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
 import ActivityCard from "./ActivityCard";
 import MyActivityCard from "./MyActivityCard";
@@ -58,8 +54,14 @@ export default function ActivityFeed() {
   async function handleJoin(activityId) {
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
-      await joinActivity({ activity_id: activityId, user_id: user.id });
+      await ActivityService.joinActivity(activityId, user.id);
       setJoinedMap((m) => ({ ...m, [activityId]: true }));
+      // Optional: Show success message
+      // toast.success('Successfully joined the activity!');
+    } catch (error) {
+      console.error("Failed to join activity:", error);
+      // Optional: Show error message
+      // toast.error(error.message);
     } finally {
       setJoining((s) => ({ ...s, [activityId]: false }));
     }
@@ -68,8 +70,14 @@ export default function ActivityFeed() {
   async function handleLeave(activityId) {
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
-      await leaveActivity({ activity_id: activityId, user_id: user.id });
+      await ActivityService.leaveActivity(activityId, user.id);
       setJoinedMap((m) => ({ ...m, [activityId]: false }));
+      // Optional: Show success message
+      // toast.success('Successfully left the activity.');
+    } catch (error) {
+      console.error("Failed to leave activity:", error);
+      // Optional: Show error message
+      // toast.error(error.message);
     } finally {
       setJoining((s) => ({ ...s, [activityId]: false }));
     }

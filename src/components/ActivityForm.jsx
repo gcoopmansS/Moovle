@@ -6,7 +6,7 @@ import {
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
-import { createActivity } from "../api/activities";
+import { ActivityService } from "../services";
 import LocationInput from "./LocationInput";
 
 const activityTypes = [
@@ -84,7 +84,7 @@ export default function ActivityForm({ onCreated }) {
 
     setSaving(true);
     try {
-      await createActivity({
+      await ActivityService.createActivity({
         userId: user.id,
         title,
         description,
@@ -99,19 +99,26 @@ export default function ActivityForm({ onCreated }) {
         max_participants: maxParticipants,
       });
 
-      // Reset & navigate back to feed (parent will likely switch tabs)
+      // Success! Activity created
       setTitle("");
+      setDescription("");
+      setLocation(null);
       setDate("");
       setTime("");
-      setLocation({ place_name: "", lat: undefined, lng: undefined });
       setDistance("");
-      setMaxParticipants(2);
-      setDescription("");
-      setSelectedType("running");
-      setTouched({});
-      onCreated?.();
-    } catch (err) {
-      setErrorMsg(err.message || "Failed to create activity");
+      setMaxParticipants(10);
+      setSelectedType("");
+      setVisibility("friends");
+
+      // Optional: Show success message
+      // toast.success('Activity created successfully!');
+
+      // Navigate or refresh feed
+      // onActivityCreated && onActivityCreated();
+    } catch (error) {
+      console.error("Failed to create activity:", error);
+      // Optional: Show error message
+      // toast.error(error.message);
     } finally {
       setSaving(false);
     }
