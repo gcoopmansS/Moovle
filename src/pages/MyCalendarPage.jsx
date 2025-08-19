@@ -69,6 +69,14 @@ export default function MyCalendarPage() {
     load();
   }, [load]);
 
+  // Refresh data when navigating to this page to catch joined activities
+  useEffect(() => {
+    // Refresh when the pathname changes to this page
+    if (location.pathname.includes('/calendar')) {
+      load();
+    }
+  }, [location.pathname, load]);
+
   // Handle success messages from navigation state
   useEffect(() => {
     if (location.state?.fromCreation && location.state?.message) {

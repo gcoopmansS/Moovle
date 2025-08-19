@@ -170,27 +170,57 @@ export async function fetchMyActivities({
     Date.now() + daysAhead * 24 * 3600 * 1000
   ).toISOString();
 
-  // Get only the current user's activities
-  const { data: activities, error } = await supabase
+  // Get activities created by the user
+  const { data: createdActivities, error: createdError } = await supabase
     .from("activities")
     .select("*")
     .gte("starts_at", now)
     .lte("starts_at", future)
-    .eq("creator_id", currentUserId) // Only current user's activities
+    .eq("creator_id", currentUserId)
     .order("starts_at", { ascending: true });
-  if (error) throw error;
+  if (createdError) throw createdError;
 
-  if (!activities || activities.length === 0) {
+  // Get activities the user has joined as a participant
+  const { data: participantData, error: participantError } = await supabase
+    .from("activity_participants")
+    .select(`
+      activity_id,
+      activities!inner (*)
+    `)
+    .eq("user_id", currentUserId)
+    .gte("activities.starts_at", now)
+    .lte("activities.starts_at", future);
+  if (participantError) throw participantError;
+
+  // Extract activities from participant data
+  const joinedActivities = (participantData || [])
+    .filter((p) => p.activities) // Filter out any with null activities
+    .map((p) => p.activities);
+
+  // Combine both lists, removing duplicates (in case user created and joined the same activity)
+  const allActivities = [...(createdActivities || []), ...joinedActivities];
+  const uniqueActivities = allActivities.reduce((acc, activity) => {
+    const existingIndex = acc.findIndex((a) => a.id === activity.id);
+    if (existingIndex === -1) {
+      acc.push(activity);
+    }
+    return acc;
+  }, []);
+
+  // Sort by start time
+  uniqueActivities.sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+
+  if (uniqueActivities.length === 0) {
     return [];
   }
 
   // Get participant data for all activities using helper function
   const participantsByActivity = await fetchParticipantsForActivities(
-    activities.map((a) => a.id)
+    uniqueActivities.map((a) => a.id)
   );
 
-  // For user's own activities, include participant data
-  return activities.map((activity) => ({
+  // Return activities with participant data
+  return uniqueActivities.map((activity) => ({
     ...activity,
     creator: null, // We can handle this in the UI to show "You" or current user info
     participants: participantsByActivity[activity.id] || [],
