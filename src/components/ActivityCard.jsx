@@ -313,7 +313,7 @@ export default function ActivityCard({
             {joined ? (
               <button
                 disabled={busy}
-                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none"
+                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none cursor-pointer"
                 onClick={onLeave}
               >
                 {busy ? "Leaving..." : "Leave"}

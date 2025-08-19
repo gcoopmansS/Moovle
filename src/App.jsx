@@ -110,7 +110,7 @@ function App() {
           avatar_url: userProfile?.avatar_url,
         }}
       />
-      <main className="pt-16 pb-20">{renderMainContent()}</main>
+      <main className="pt-14 pb-16">{renderMainContent()}</main>
       <NavigationFooter
         onClickingCreate={() => handleFooterClick("create")}
         onClickingFeed={() => handleFooterClick("feed")}

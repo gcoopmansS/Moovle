@@ -7,7 +7,13 @@ import { IoTennisballOutline } from "react-icons/io5";
 import { MapPin, UsersRound } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
-export default function MyActivityCard({ activity, isNext = false }) {
+export default function MyActivityCard({
+  activity,
+  isNext = false,
+  isCreator = true,
+  onLeave,
+  busy = false,
+}) {
   const [avatarError, setAvatarError] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const dropdownRef = useRef(null);
@@ -85,15 +91,17 @@ export default function MyActivityCard({ activity, isNext = false }) {
         isNext ? "shadow-md ring-1 ring-blue-100/50" : "shadow-sm"
       }`}
     >
-      {/* Your Activity badge - consistent styling */}
+      {/* Activity relationship badge */}
       <div
         className={`absolute -top-2.5 left-4 px-3 py-1 text-white text-xs font-semibold rounded-full shadow-sm uppercase tracking-wide ${
           isNext
             ? "bg-gradient-to-r from-blue-500 to-indigo-600"
-            : "bg-gradient-to-r from-gray-600 to-gray-700"
+            : isCreator
+            ? "bg-gradient-to-r from-purple-600 to-purple-700"
+            : "bg-gradient-to-r from-green-600 to-green-700"
         }`}
       >
-        {isNext ? "🚀 Next Activity" : "✨ Your Activity"}
+        {isNext ? "🚀 Next Activity" : isCreator ? "👑 Created" : "🎯 Joined"}
       </div>
 
       <div className="flex items-center justify-between pt-1">
@@ -111,7 +119,7 @@ export default function MyActivityCard({ activity, isNext = false }) {
           {/* Activity details with better typography */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-bold text-gray-900 text-base truncate">
+              <h3 className="font-bold text-gray-900 text-base leading-tight">
                 {activity.title}
               </h3>
               <span className="text-xs text-gray-600 whitespace-nowrap font-medium">
@@ -119,6 +127,16 @@ export default function MyActivityCard({ activity, isNext = false }) {
                 {formatTime(activity.starts_at)}
               </span>
             </div>
+            {!isCreator && (
+              <div className="text-xs text-gray-500 mb-1">
+                Created by {activity.creator?.display_name || "Someone"}
+                {activity.isInvited && (
+                  <span className="ml-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                    Invited
+                  </span>
+                )}
+              </div>
+            )}
             {(activity.location ||
               activity.place_name ||
               activity.location_text) && (
@@ -247,6 +265,19 @@ export default function MyActivityCard({ activity, isNext = false }) {
           )}
         </div>
       </div>
+
+      {/* Leave button for joined activities */}
+      {!isCreator && onLeave && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <button
+            disabled={busy}
+            onClick={() => onLeave(activity.id)}
+            className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm"
+          >
+            {busy ? "Leaving..." : "Leave Activity"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
