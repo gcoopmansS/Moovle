@@ -58,14 +58,32 @@ export default function ActivityFeed() {
 
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
-      await ActivityService.joinActivity(activityId, user.id);
+      // Find the activity to check if it's an invitation
+      const activity = availableActivities.find((a) => a.id === activityId);
+
+      if (activity?.isInvited) {
+        // For invited activities, mark invitation as accepted AND join the activity
+        await Promise.all([
+          // Mark invitation as accepted
+          supabase
+            .from("activity_invitations")
+            .update({
+              status: "accepted",
+              responded_at: new Date().toISOString(),
+            })
+            .eq("activity_id", activityId)
+            .eq("invited_user_id", user.id),
+          // Actually join the activity as a participant
+          ActivityService.joinActivity(activityId, user.id),
+        ]);
+      } else {
+        // For regular activities, just join
+        await ActivityService.joinActivity(activityId, user.id);
+      }
+
       setJoinedMap((m) => ({ ...m, [activityId]: true }));
-      // Optional: Show success message
-      // toast.success('Successfully joined the activity!');
     } catch (error) {
       console.error("Failed to join activity:", error);
-      // Optional: Show error message
-      // toast.error(error.message);
     } finally {
       setJoining((s) => ({ ...s, [activityId]: false }));
     }

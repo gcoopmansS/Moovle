@@ -85,9 +85,9 @@ export class ActivityService {
       errors.push("Title is required");
     }
 
-    if (!data.date) {
+    if (!data.starts_at) {
       errors.push("Date is required");
-    } else if (new Date(data.date) < new Date()) {
+    } else if (new Date(data.starts_at) < new Date()) {
       errors.push("Date must be in the future");
     }
 

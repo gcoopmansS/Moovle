@@ -4,8 +4,17 @@ import {
   LiaWalkingSolid,
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
-import { Calendar, MapPin, Clock2, UsersRound, User, X } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Clock2,
+  UsersRound,
+  User,
+  X,
+  UserPlus,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import FriendInviteModal from "./FriendInviteModal";
 
 export default function ActivityCard({
   activity,
@@ -17,6 +26,7 @@ export default function ActivityCard({
 }) {
   const [avatarError, setAvatarError] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const dropdownRef = useRef(null);
 
   // Close dropdown when clicking outside
@@ -35,6 +45,13 @@ export default function ActivityCard({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [showParticipants]);
+  const handleInvitesSent = (invitedFriendIds) => {
+    console.log(
+      `Invited ${invitedFriendIds.length} friends to activity ${activity.id}`
+    );
+    // Could show a success message or update UI
+  };
+
   const icons = {
     running: <LiaRunningSolid className="size-8" />,
     cycling: <LiaBikingSolid className="size-8" />,
@@ -112,12 +129,20 @@ export default function ActivityCard({
           </div>
         </div>
 
-        {/* Join Status Badge */}
-        {joined && (
-          <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-            Joined ✓
-          </div>
-        )}
+        {/* Status Badges */}
+        <div className="flex flex-col gap-2 items-end">
+          {activity.isInvited && (
+            <div className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
+              <span>✉️</span>
+              Invited
+            </div>
+          )}
+          {joined && (
+            <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
+              Joined ✓
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Activity Details */}
@@ -261,8 +286,8 @@ export default function ActivityCard({
 
         {/* Action Button or Participant Management */}
         {isOwnActivity ? (
-          // For own activities: Show participant info
-          <div className="text-right">
+          // For own activities: Show participant info and invite button
+          <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">
               {(activity.participants?.length ??
                 activity.participant_count ??
@@ -274,6 +299,13 @@ export default function ActivityCard({
                   } joined`
                 : "No participants yet"}
             </span>
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <UserPlus className="w-4 h-4" />
+              Invite Friends
+            </button>
           </div>
         ) : (
           // For others' activities: Show join/leave buttons
@@ -298,6 +330,14 @@ export default function ActivityCard({
           </>
         )}
       </div>
+
+      {/* Friend Invite Modal */}
+      <FriendInviteModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        activity={activity}
+        onInvitesSent={handleInvitesSent}
+      />
     </div>
   );
 }

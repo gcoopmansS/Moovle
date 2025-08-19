@@ -63,22 +63,66 @@ export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
     Date.now() + daysAhead * 24 * 3600 * 1000
   ).toISOString();
 
-  // Get activities excluding the current user's own activities
+  // Get regular activities (excluding current user's own activities)
   const { data: activities, error } = await supabase
     .from("activities")
     .select("*")
     .gte("starts_at", now)
     .lte("starts_at", future)
     .neq("creator_id", currentUserId) // Exclude current user's activities
+    .or("visibility.eq.public,visibility.eq.friends") // Only public and friends activities
     .order("starts_at", { ascending: true });
   if (error) throw error;
 
-  if (!activities || activities.length === 0) {
+  // Get activities the user was invited to (any status - pending or accepted)
+  const { data: invitedActivities, error: invitedError } = await supabase
+    .from("activity_invitations")
+    .select(
+      "activity_id,status,invited_by,created_at,activities:activity_id(id,creator_id,title,description,starts_at,location_text,place_name,lat,lng,visibility,type,distance,max_participants)"
+    )
+    .eq("invited_user_id", currentUserId)
+    .gte("activities.starts_at", now)
+    .lte("activities.starts_at", future);
+
+  if (invitedError) throw invitedError;
+
+  // Combine regular activities and invited activities
+  const allActivities = [
+    ...(activities || []).map((activity) => ({
+      ...activity,
+      isInvited: false,
+    })),
+    ...(invitedActivities || [])
+      .filter((inv) => inv.activities) // Filter out any with null activities
+      .map((inv) => ({
+        ...inv.activities,
+        isInvited: true,
+        invitationStatus: inv.status, // 'pending' or 'accepted'
+        invitationDate: inv.created_at,
+        invitedBy: inv.invited_by,
+      })),
+  ];
+
+  // Remove duplicates (in case an activity appears in both lists)
+  const uniqueActivities = allActivities.reduce((acc, activity) => {
+    const existingIndex = acc.findIndex((a) => a.id === activity.id);
+    if (existingIndex >= 0) {
+      // If duplicate, prefer the invited version (more specific)
+      if (activity.isInvited) {
+        acc[existingIndex] = activity;
+      }
+    } else {
+      acc.push(activity);
+    }
+    return acc;
+  }, []);
+
+  if (uniqueActivities.length === 0) {
     return [];
   }
 
   // Get unique creator IDs
-  const creatorIds = [...new Set(activities.map((a) => a.creator_id))];
+  const creatorIds = [...new Set(uniqueActivities.map((a) => a.creator_id))];
 
   // Fetch creator profiles
   const { data: profiles, error: profilesError } = await supabase
@@ -96,18 +140,21 @@ export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
 
   // Get participant data for all activities using helper function
   const participantsByActivity = await fetchParticipantsForActivities(
-    activities.map((a) => a.id)
+    uniqueActivities.map((a) => a.id)
   );
 
   // Transform the data to include creator info and participant data
-  const transformedData = activities.map((activity) => ({
+  const transformedData = uniqueActivities.map((activity) => ({
     ...activity,
     creator: profilesMap[activity.creator_id],
     participants: participantsByActivity[activity.id] || [],
     participant_count: (participantsByActivity[activity.id] || []).length,
   }));
 
-  return transformedData;
+  // Sort by date
+  return transformedData.sort(
+    (a, b) => new Date(a.starts_at) - new Date(b.starts_at)
+  );
 }
 
 export async function fetchMyActivities({
@@ -161,22 +208,28 @@ export async function createActivity({
   lat, // NEW
   lng, // NEW
 }) {
-  const { error } = await supabase.from("activities").insert({
-    creator_id: userId,
-    title,
-    description,
-    starts_at,
-    location_text,
-    visibility,
-    type,
-    distance,
-    max_participants,
-    place_name,
-    lat,
-    lng,
-    // NOTE: geom will be auto-set by the trigger when lat/lng are present
-  });
+  const { data, error } = await supabase
+    .from("activities")
+    .insert({
+      creator_id: userId,
+      title,
+      description,
+      starts_at,
+      location_text,
+      visibility,
+      type,
+      distance,
+      max_participants,
+      place_name,
+      lat,
+      lng,
+      // NOTE: geom will be auto-set by the trigger when lat/lng are present
+    })
+    .select("id")
+    .single();
+
   if (error) throw error;
+  return data;
 }
 
 export async function joinActivity({ activity_id, user_id }) {
