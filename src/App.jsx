@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
 
 // Page components
-import LandingPage from "./pages/LandingPage";
+import LandingPageInline from "./pages/LandingPageInline";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -74,7 +74,7 @@ export default function App() {
     <Router>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<LandingPageInline />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
