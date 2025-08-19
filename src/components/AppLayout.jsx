@@ -9,7 +9,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className={`${SHOW_FOOTER ? "pb-20" : "pt-16"}`}>
+      <main className={`${SHOW_FOOTER ? "pb-20" : "pt-16"} page-transition`}>
         <Outlet />
       </main>
 

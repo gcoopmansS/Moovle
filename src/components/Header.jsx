@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-export default function Header({ children, onProfileClick }) {
+export default function Header({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -162,9 +162,17 @@ export default function Header({ children, onProfileClick }) {
   };
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-    setShowProfileMenu(false);
+    try {
+      setShowProfileMenu(false);
+      await supabase.auth.signOut();
+      // Force full page navigation to landing page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // Even if sign out fails, still close menu and navigate
+      setShowProfileMenu(false);
+      window.location.href = "/";
+    }
   };
 
   return (
@@ -193,7 +201,7 @@ export default function Header({ children, onProfileClick }) {
                   <button
                     key={item.id}
                     onClick={() => handleNavigation(item.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
                       isActive
                         ? "text-blue-600 font-semibold"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
@@ -212,7 +220,7 @@ export default function Header({ children, onProfileClick }) {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
+              className="lg:hidden p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 cursor-pointer"
             >
               {showMobileMenu ? (
                 <X className="h-5 w-5" />
@@ -223,12 +231,12 @@ export default function Header({ children, onProfileClick }) {
 
             {/* Notifications & Messages (Desktop) */}
             <div className="hidden sm:flex items-center gap-2">
-              <button className="p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
+              <button className="p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
                 <Bell className="h-5 w-5" />
                 <div className="absolute inset-0 rounded-xl bg-blue-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
               </button>
 
-              <button className="p-2.5 rounded-xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group">
+              <button className="p-2.5 rounded-xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
                 <MessageCircle className="h-5 w-5" />
                 <div className="absolute inset-0 rounded-xl bg-green-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
               </button>
@@ -248,7 +256,7 @@ export default function Header({ children, onProfileClick }) {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className={`relative rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 ${
+                className={`relative rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 cursor-pointer ${
                   showProfileMenu
                     ? "shadow-sm ring-2 ring-purple-200"
                     : "hover:shadow-md"
@@ -280,7 +288,7 @@ export default function Header({ children, onProfileClick }) {
 
                   <button
                     onClick={() => {
-                      onProfileClick?.();
+                      navigate("/app/profile");
                       setShowProfileMenu(false);
                     }}
                     className="w-full px-4 py-3 text-left text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-150 flex items-center gap-3 group"
@@ -295,7 +303,7 @@ export default function Header({ children, onProfileClick }) {
                     onClick={() => {
                       handleSignOut();
                     }}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:text-red-700 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group"
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:text-red-700 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group cursor-pointer"
                   >
                     <div className="p-1.5 rounded-lg bg-red-100 text-red-600 group-hover:bg-red-200 transition-colors">
                       <LogOut className="w-3.5 h-3.5" />
@@ -340,11 +348,11 @@ export default function Header({ children, onProfileClick }) {
 
               {/* Mobile-only quick actions */}
               <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200">
+                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
                   <Bell className="h-4 w-4" />
                   <span className="text-sm">Notifications</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200">
+                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 cursor-pointer">
                   <MessageCircle className="h-4 w-4" />
                   <span className="text-sm">Messages</span>
                 </button>

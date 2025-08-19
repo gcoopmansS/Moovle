@@ -15,6 +15,7 @@ export default function ProfilePage({ onProfileUpdate }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const fileRef = useRef(null);
 
   // Helper to detect OAuth provider
@@ -32,8 +33,23 @@ export default function ProfilePage({ onProfileUpdate }) {
   };
 
   const loadProfile = useCallback(async () => {
+    if (!user?.id) return;
+
     try {
-      setLoading(true);
+      // Only show loading spinner on first load, not on subsequent updates
+      if (!hasLoadedOnce) {
+        setLoading(true);
+      }
+
+      // Use a timeout to prevent indefinite loading
+      const timeoutId = setTimeout(() => {
+        console.warn("Profile loading timeout");
+        setLoading(false);
+        setMessage(
+          "Profile loading is taking longer than expected. Please try refreshing."
+        );
+      }, 10000);
+
       const { data, error } = await supabase
         .from("profiles")
         .select(
@@ -42,7 +58,11 @@ export default function ProfilePage({ onProfileUpdate }) {
         .eq("id", user.id)
         .single();
 
-      if (error && error.code !== "PGRST116") throw error;
+      clearTimeout(timeoutId);
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
 
       if (data) {
         // Convert location data to LocationInput format
@@ -75,31 +95,46 @@ export default function ProfilePage({ onProfileUpdate }) {
         const fallbackName =
           oauthDisplayName || user.email?.split("@")[0] || "User";
 
-        await supabase.from("profiles").upsert(
-          {
-            id: user.id,
-            display_name: fallbackName,
-            avatar_url: oauthAvatar || null,
-          },
-          { onConflict: "id" }
-        );
+        // Create profile asynchronously to avoid blocking UI
+        supabase
+          .from("profiles")
+          .upsert(
+            {
+              id: user.id,
+              display_name: fallbackName,
+              avatar_url: oauthAvatar || null,
+            },
+            { onConflict: "id" }
+          )
+          .then(({ error }) => {
+            if (error) {
+              console.warn("Failed to create profile:", error);
+            }
+          });
+
         setProfile((p) => ({
           ...p,
           display_name: fallbackName,
           avatar_url: oauthAvatar || "",
         }));
       }
+
+      // Mark that we've loaded at least once
+      setHasLoadedOnce(true);
     } catch (error) {
       console.error("Error loading profile:", error);
-      setMessage("Failed to load profile");
+      setMessage("Failed to load profile. Please try again.");
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, hasLoadedOnce]); // Added hasLoadedOnce to dependencies
 
   useEffect(() => {
-    if (user) loadProfile();
-  }, [user, loadProfile]);
+    // Only load profile when user changes, not when loadProfile function changes
+    if (user && !hasLoadedOnce) {
+      loadProfile();
+    }
+  }, [user, hasLoadedOnce, loadProfile]);
 
   async function saveProfile(e) {
     e.preventDefault();
@@ -203,16 +238,41 @@ export default function ProfilePage({ onProfileUpdate }) {
     }
   }
 
-  if (loading) {
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // Force full page navigation to landing page
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // Even if sign out fails, still navigate to landing page
+      window.location.href = "/";
+    }
+  };
+
+  if (loading && !hasLoadedOnce) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6">
-        <div className="text-center">Loading profile...</div>
+        <div className="text-center">
+          <div className="animate-pulse">
+            <div className="w-20 h-20 bg-gray-200 rounded-full mx-auto mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-4">
+      {/* Subtle loading indicator for updates */}
+      {loading && hasLoadedOnce && (
+        <div className="fixed top-20 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-sm animate-pulse z-50">
+          Updating...
+        </div>
+      )}
+
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">My Profile</h2>
         <p className="text-gray-600">Update your personal information</p>
@@ -360,7 +420,7 @@ export default function ProfilePage({ onProfileUpdate }) {
         {/* Sign Out */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <button
-            onClick={signOut}
+            onClick={handleSignOut}
             className="w-full bg-gray-200 text-gray-700 p-3 rounded-xl font-semibold hover:bg-gray-300 transition-colors flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />

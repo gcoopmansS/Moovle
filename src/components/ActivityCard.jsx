@@ -235,39 +235,63 @@ export default function ActivityCard({
                           key={index}
                           className="flex items-center gap-3 text-sm"
                         >
-                          {participant.avatar_url ? (
-                            <img
-                              src={participant.avatar_url}
-                              alt={participant.display_name || "Participant"}
-                              className="w-8 h-8 rounded-full object-cover border-2 border-gray-100"
-                              onError={(e) => {
-                                // Fallback to colored circle if image fails to load
-                                e.target.style.display = "none";
-                                e.target.nextSibling.style.display = "flex";
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
-                            style={{
-                              display: participant.avatar_url ? "none" : "flex",
-                            }}
-                          >
-                            <span className="text-white font-semibold text-xs">
-                              {participant.display_name
-                                ? participant.display_name
-                                    .charAt(0)
-                                    .toUpperCase()
-                                : "U"}
-                            </span>
-                          </div>
+                          {(() => {
+                            const avatarUrl =
+                              participant.profile?.avatar_url ||
+                              participant.avatar_url;
+                            const displayName =
+                              participant.profile?.display_name ||
+                              participant.display_name;
+
+                            // Only show image if we have a valid, non-empty avatar URL
+                            if (avatarUrl && avatarUrl.trim() !== "") {
+                              return (
+                                <img
+                                  src={avatarUrl}
+                                  alt="Profile"
+                                  className="w-8 h-8 rounded-full object-cover"
+                                  onError={(e) => {
+                                    // Replace failed image with fallback circle
+                                    const fallback =
+                                      document.createElement("div");
+                                    fallback.className =
+                                      "w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center";
+                                    fallback.innerHTML = `<span class="text-white font-semibold text-xs">${
+                                      displayName
+                                        ? displayName.charAt(0).toUpperCase()
+                                        : "U"
+                                    }</span>`;
+                                    e.target.parentNode.replaceChild(
+                                      fallback,
+                                      e.target
+                                    );
+                                  }}
+                                />
+                              );
+                            } else {
+                              // Show fallback circle directly
+                              return (
+                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white font-semibold text-xs">
+                                    {displayName
+                                      ? displayName.charAt(0).toUpperCase()
+                                      : "U"}
+                                  </span>
+                                </div>
+                              );
+                            }
+                          })()}
                           <div className="flex-1 min-w-0">
                             <p className="text-gray-900 font-medium truncate">
-                              {participant.display_name || "Unknown User"}
+                              {participant.profile?.display_name ||
+                                participant.display_name ||
+                                "Unknown User"}
                             </p>
-                            {participant.email && (
+                            {(participant.profile?.email ||
+                              participant.email) && (
                               <p className="text-xs text-gray-500 truncate">
-                                {participant.email}
+                                {participant.profile?.email ||
+                                  participant.email}
                               </p>
                             )}
                           </div>

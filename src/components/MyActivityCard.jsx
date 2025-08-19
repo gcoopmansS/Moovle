@@ -14,7 +14,7 @@ export default function MyActivityCard({
   onLeave,
   busy = false,
 }) {
-  const [avatarError, setAvatarError] = useState(false);
+  const [avatarErrors, setAvatarErrors] = useState({});
   const [showParticipants, setShowParticipants] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -89,7 +89,7 @@ export default function MyActivityCard({
     <div
       className={`relative bg-white border border-gray-100 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
         isNext ? "shadow-md ring-1 ring-blue-100/50" : "shadow-sm"
-      }`}
+      } ${showParticipants ? "z-50" : ""}`}
     >
       {/* Activity relationship badge */}
       <div
@@ -158,7 +158,10 @@ export default function MyActivityCard({
           onClick={() => hasParticipants && setShowParticipants(true)}
         >
           {/* Participant count */}
-          <div className="text-center relative" ref={dropdownRef}>
+          <div
+            className={`text-center relative ${showParticipants ? "z-50" : ""}`}
+            ref={dropdownRef}
+          >
             <div
               className="flex items-center gap-1.5 cursor-pointer p-2 rounded-lg transition-colors"
               onClick={() => setShowParticipants(!showParticipants)}
@@ -176,7 +179,7 @@ export default function MyActivityCard({
 
             {/* Participants Dropdown */}
             {showParticipants && hasParticipants && (
-              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-48 max-w-64">
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 min-w-48 max-w-64">
                 <div className="p-3">
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">
                     Participants ({activity.participant_count})
@@ -188,34 +191,56 @@ export default function MyActivityCard({
                           key={index}
                           className="flex items-center gap-2 text-sm"
                         >
-                          {participant.avatar_url ? (
-                            <img
-                              src={participant.avatar_url}
-                              alt={participant.display_name || "Participant"}
-                              className="w-6 h-6 rounded-full object-cover border border-gray-100"
-                              onError={(e) => {
-                                // Fallback to colored circle if image fails to load
-                                e.target.style.display = "none";
-                                e.target.nextSibling.style.display = "flex";
-                              }}
-                            />
-                          ) : null}
-                          <div
-                            className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center"
-                            style={{
-                              display: participant.avatar_url ? "none" : "flex",
-                            }}
-                          >
-                            <span className="text-white font-semibold text-xs">
-                              {participant.display_name
-                                ? participant.display_name
-                                    .charAt(0)
-                                    .toUpperCase()
-                                : "U"}
-                            </span>
-                          </div>
+                          {(() => {
+                            const avatarUrl =
+                              participant.profile?.avatar_url ||
+                              participant.avatar_url;
+                            const displayName =
+                              participant.profile?.display_name ||
+                              participant.display_name;
+
+                            // Only show image if we have a valid, non-empty avatar URL
+                            if (avatarUrl && avatarUrl.trim() !== "") {
+                              return (
+                                <img
+                                  src={avatarUrl}
+                                  alt="Profile"
+                                  className="w-6 h-6 rounded-full object-cover border border-gray-100"
+                                  onError={(e) => {
+                                    // Replace failed image with fallback circle
+                                    const fallback =
+                                      document.createElement("div");
+                                    fallback.className =
+                                      "w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center";
+                                    fallback.innerHTML = `<span class="text-white font-semibold text-xs">${
+                                      displayName
+                                        ? displayName.charAt(0).toUpperCase()
+                                        : "U"
+                                    }</span>`;
+                                    e.target.parentNode.replaceChild(
+                                      fallback,
+                                      e.target
+                                    );
+                                  }}
+                                />
+                              );
+                            } else {
+                              // Show fallback circle directly
+                              return (
+                                <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                                  <span className="text-white font-semibold text-xs">
+                                    {displayName
+                                      ? displayName.charAt(0).toUpperCase()
+                                      : "U"}
+                                  </span>
+                                </div>
+                              );
+                            }
+                          })()}
                           <span className="text-gray-700 truncate">
-                            {participant.display_name || "Unknown User"}
+                            {participant.profile?.display_name ||
+                              participant.display_name ||
+                              "Unknown User"}
                           </span>
                         </div>
                       ))}
@@ -234,24 +259,41 @@ export default function MyActivityCard({
           {hasParticipants && (
             <div className="flex -space-x-2">
               {activity.participants &&
-                activity.participants.slice(0, 2).map((participant, index) => (
-                  <div key={participant.id || index} className="relative">
-                    {participant.avatar_url && !avatarError ? (
-                      <img
-                        src={participant.avatar_url}
-                        alt={participant.display_name || "Participant"}
-                        className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm"
-                        onError={() => setAvatarError(true)}
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
-                        <span className="text-white text-xs font-semibold">
-                          {getInitials(participant.display_name)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                activity.participants.slice(0, 2).map((participant, index) => {
+                  const participantKey = participant.id || index;
+                  const avatarUrl =
+                    participant.profile?.avatar_url || participant.avatar_url;
+                  const displayName =
+                    participant.profile?.display_name ||
+                    participant.display_name;
+                  const hasAvatarError = avatarErrors[participantKey];
+
+                  return (
+                    <div key={participantKey} className="relative">
+                      {avatarUrl &&
+                      avatarUrl.trim() !== "" &&
+                      !hasAvatarError ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayName || "Participant"}
+                          className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-sm"
+                          onError={() =>
+                            setAvatarErrors((prev) => ({
+                              ...prev,
+                              [participantKey]: true,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
+                          <span className="text-white text-xs font-semibold">
+                            {getInitials(displayName)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
               {/* +X more indicator - consistent styling */}
               {activity.participant_count > 2 && (

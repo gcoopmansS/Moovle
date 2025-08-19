@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LiaRunningSolid,
   LiaBikingSolid,
@@ -37,6 +38,7 @@ const activityTypes = [
 
 export default function CreateActivityPage() {
   const { user } = useSupabaseAuth();
+  const navigate = useNavigate();
 
   const [selectedType, setSelectedType] = useState("running");
   const [title, setTitle] = useState("");
@@ -59,14 +61,33 @@ export default function CreateActivityPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   const handleInvitesSent = (invitedFriendIds) => {
-    // Could show a success message or update UI
+    // Show success message and redirect to activity feed
     console.log(`Invited ${invitedFriendIds.length} friends to activity`);
+    setShowInviteModal(false);
+    setCreatedActivity(null);
+
+    // Immediate smooth redirect
+    navigate("/app", {
+      replace: true,
+      state: {
+        fromCreation: true,
+        message: `Activity created and ${invitedFriendIds.length} friends invited!`,
+      },
+    });
   };
 
   const handleSkipInvites = () => {
     setShowInviteModal(false);
     setCreatedActivity(null);
-    // Could navigate to activity feed or show success message
+
+    // Immediate smooth redirect
+    navigate("/app", {
+      replace: true,
+      state: {
+        fromCreation: true,
+        message: "Activity created successfully!",
+      },
+    });
   };
 
   function handleBlur(field) {
@@ -166,10 +187,23 @@ export default function CreateActivityPage() {
       if (visibility === "specific-friends") {
         setShowInviteModal(true);
       } else {
-        // For all-friends and public, show success message
+        // For all-friends and public, show success message and redirect smoothly
         setShowSuccessMessage(true);
         setCreatedActivity(null);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
+
+        // Immediate smooth redirect without waiting
+        setTimeout(() => {
+          setShowSuccessMessage(false);
+          // Use immediate navigation with state to preserve smoothness
+          navigate("/app", {
+            replace: true,
+            state: {
+              fromCreation: true,
+              newActivity: activity,
+              message: "Activity created successfully!",
+            },
+          });
+        }, 800); // Reduced from 2000ms to 800ms for faster feel
       }
     } catch (error) {
       console.error("Failed to create activity:", error);
@@ -403,7 +437,7 @@ export default function CreateActivityPage() {
 
         {/* Success Message */}
         {showSuccessMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
             <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
               <Check className="w-5 h-5 text-green-600" />
             </div>
@@ -413,8 +447,8 @@ export default function CreateActivityPage() {
               </p>
               <p className="text-sm text-green-700">
                 {visibility === "all-friends"
-                  ? "Your friends will see this activity in their feed"
-                  : "Everyone can now discover and join your activity"}
+                  ? "Taking you to your activity feed..."
+                  : "Taking you to your activity feed..."}
               </p>
             </div>
           </div>

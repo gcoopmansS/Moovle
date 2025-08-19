@@ -47,8 +47,8 @@ export default function SignupPage() {
 
       if (error) throw error;
 
-      // Navigate to app on successful signup
-      navigate("/app");
+      // Navigate to onboarding for new users
+      navigate("/onboarding");
     } catch (error) {
       setError(error.message);
     } finally {
@@ -64,7 +64,7 @@ export default function SignupPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/app`,
+          redirectTo: `${window.location.origin}/onboarding`,
           scopes: "email profile",
         },
       });

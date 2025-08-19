@@ -19,7 +19,7 @@ export default function FriendsPage() {
   const me = user?.id;
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("friends");
+  const [activeTab, setActiveTab] = useState("discover");
 
   const [edges, setEdges] = useState([]);
   const [profilesMap, setProfilesMap] = useState({});
@@ -35,19 +35,33 @@ export default function FriendsPage() {
     if (!me) return;
     setListLoading(true);
     try {
+      // Add timeout for loading
+      const timeoutId = setTimeout(() => {
+        console.warn("Friends loading timeout");
+        setListLoading(false);
+      }, 10000);
+
       const e = await listFriendships(me);
       setEdges(e);
+
+      clearTimeout(timeoutId);
+
       const ids = Array.from(
         new Set(
           e.flatMap((f) => [f.user_a, f.user_b]).filter((id) => id && id !== me)
         )
       );
+
       if (ids.length) {
         const profs = await getProfilesByIds(ids);
         setProfilesMap(Object.fromEntries(profs.map((p) => [p.id, p])));
       } else {
         setProfilesMap({});
       }
+    } catch (error) {
+      console.error("Error loading friends:", error);
+      setEdges([]);
+      setProfilesMap({});
     } finally {
       setListLoading(false);
     }
@@ -56,13 +70,22 @@ export default function FriendsPage() {
   const loadCurrentUserLocation = useCallback(async () => {
     if (!me) return;
     try {
+      // Add timeout
+      const timeoutId = setTimeout(() => {
+        console.warn("Location loading timeout");
+      }, 5000);
+
       const { data, error } = await supabase
         .from("profiles")
         .select("location_lat, location_lng, location")
         .eq("id", me)
         .single();
 
-      if (error) throw error;
+      clearTimeout(timeoutId);
+
+      if (error && error.code !== "PGRST116") {
+        throw error;
+      }
 
       if (data?.location_lat && data?.location_lng) {
         setCurrentUserLocation({
@@ -267,14 +290,14 @@ export default function FriendsPage() {
           {/* Tabs */}
           <div className="flex bg-gray-100 rounded-xl p-1 mb-4">
             <button
-              onClick={() => setActiveTab("friends")}
+              onClick={() => setActiveTab("discover")}
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "friends"
+                activeTab === "discover"
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-600 hover:text-gray-800"
               }`}
             >
-              My Friends ({acceptedFriendIds.length})
+              Discover
             </button>
             <button
               onClick={() => setActiveTab("requests")}
@@ -292,14 +315,14 @@ export default function FriendsPage() {
               )}
             </button>
             <button
-              onClick={() => setActiveTab("discover")}
+              onClick={() => setActiveTab("friends")}
               className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "discover"
+                activeTab === "friends"
                   ? "bg-white text-blue-600 shadow-sm"
                   : "text-gray-600 hover:text-gray-800"
               }`}
             >
-              Discover
+              My Friends ({acceptedFriendIds.length})
             </button>
           </div>
 

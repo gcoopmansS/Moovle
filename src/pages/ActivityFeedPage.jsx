@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { fetchMyActivities } from "../api/activities";
 import { ActivityService } from "../services";
@@ -8,23 +9,39 @@ import MyActivityCard from "../components/MyActivityCard";
 
 export default function ActivityFeedPage() {
   const { user } = useSupabaseAuth();
+  const location = useLocation();
   const [availableActivities, setAvailableActivities] = useState([]);
   const [myActivities, setMyActivities] = useState([]);
   const [pendingInvitations, setPendingInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState({}); // activityId -> boolean
   const [joinedMap, setJoinedMap] = useState({}); // activityId -> true/false
+  const [successMessage, setSuccessMessage] = useState("");
 
   const load = useCallback(async () => {
     if (!user?.id) return; // Don't load if user is not authenticated
 
-    setLoading(true);
+    // Only show loading if we don't have any data yet (first load)
+    const isFirstLoad =
+      availableActivities.length === 0 && myActivities.length === 0;
+    if (isFirstLoad) {
+      setLoading(true);
+    }
+
     try {
+      // Add timeout for loading
+      const timeoutId = setTimeout(() => {
+        console.warn("Activity feed loading timeout");
+        setLoading(false);
+      }, 15000);
+
       // Load both available activities (others') and user's own activities
       const [availableData, myData] = await Promise.all([
         ActivityService.getActivityFeed({ currentUserId: user.id }),
         fetchMyActivities({ currentUserId: user.id }),
       ]);
+
+      clearTimeout(timeoutId);
 
       // Separate pending invitations from other activities
       const pendingInvites = availableData.filter(
@@ -40,30 +57,56 @@ export default function ActivityFeedPage() {
       setMyActivities(myData);
       setPendingInvitations(pendingInvites);
 
-      // For available activities, check if current user already joined
+      // Optimize participant checking with batch query
       if (availableData.length > 0) {
-        const entries = await Promise.all(
-          availableData.map(async (a) => {
-            const { data: p, error } = await supabase
-              .from("activity_participants")
-              .select("id")
-              .eq("activity_id", a.id)
-              .eq("user_id", user.id)
-              .maybeSingle();
-            if (error && error.code !== "PGRST116") throw error; // ignore "no rows found"
-            return [a.id, !!p];
-          })
-        );
-        setJoinedMap(Object.fromEntries(entries));
+        const activityIds = availableData.map((a) => a.id);
+
+        // Single batch query instead of multiple individual queries
+        const { data: participants, error } = await supabase
+          .from("activity_participants")
+          .select("activity_id")
+          .eq("user_id", user.id)
+          .in("activity_id", activityIds);
+
+        if (error) {
+          console.warn("Error fetching participants:", error);
+        } else {
+          // Create a Set for O(1) lookup
+          const joinedActivityIds = new Set(
+            participants?.map((p) => p.activity_id) || []
+          );
+          const joinedMap = Object.fromEntries(
+            activityIds.map((id) => [id, joinedActivityIds.has(id)])
+          );
+          setJoinedMap(joinedMap);
+        }
       }
+    } catch (error) {
+      console.error("Error loading activities:", error);
+      // Set empty data on error to prevent indefinite loading
+      setAvailableActivities([]);
+      setMyActivities([]);
+      setPendingInvitations([]);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, availableActivities.length, myActivities.length]);
 
   useEffect(() => {
     load();
   }, [load]);
+
+  // Handle success messages from navigation state (e.g., from activity creation)
+  useEffect(() => {
+    if (location.state?.fromCreation && location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Clear the success message after 4 seconds
+      setTimeout(() => setSuccessMessage(""), 4000);
+
+      // Clear the navigation state to prevent showing message again
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   async function handleJoin(activityId) {
     if (!user?.id) return; // Don't proceed if user is not authenticated
@@ -176,6 +219,28 @@ export default function ActivityFeedPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-3 py-3 space-y-4">
+      {/* Success Message */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
+          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+            <svg
+              className="w-5 h-5 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <p className="font-medium text-green-900">{successMessage}</p>
+        </div>
+      )}
+
       {/* Pending Invitations Section */}
       {pendingInvitations.length > 0 && (
         <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg p-4 border border-orange-200">

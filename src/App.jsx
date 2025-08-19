@@ -11,6 +11,7 @@ import { supabase } from "./lib/supabase";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
+import OnboardingPage from "./pages/OnboardingPage";
 import ActivityFeedPage from "./pages/ActivityFeedPage";
 import CreateActivityPage from "./pages/CreateActivityPage";
 import FriendsPage from "./pages/FriendsPage";
@@ -77,11 +78,21 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
-        {/* Protected App Routes */}
+        {/* Onboarding Route - Protected but doesn't require completed onboarding */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute requireOnboarding={false}>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected App Routes - Requires completed onboarding */}
         <Route
           path="/app"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute requireOnboarding={true}>
               <AppLayout />
             </ProtectedRoute>
           }

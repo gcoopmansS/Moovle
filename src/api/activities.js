@@ -1,60 +1,64 @@
 import { supabase } from "../lib/supabase";
 
-// Helper function to fetch participant data for activities
+// Helper function to fetch participant data for activities with optimized batching
 async function fetchParticipantsForActivities(activityIds) {
   if (!activityIds || activityIds.length === 0) {
     return {};
   }
 
-  // Fetch participants for these activities
-  const { data: participants, error: participantsError } = await supabase
-    .from("activity_participants")
-    .select("activity_id, user_id")
-    .in("activity_id", activityIds);
-  if (participantsError) throw participantsError;
+  try {
+    // Use separate queries for better reliability
+    // The join approach fails due to missing foreign key relationships
+    let participantsByActivity = {};
+    const { data: participants, error: participantsError } = await supabase
+      .from("activity_participants")
+      .select("activity_id, user_id")
+      .in("activity_id", activityIds);
+    if (participantsError) throw participantsError;
 
-  // Only fetch profiles if we have participants
-  if (!participants || participants.length === 0) {
+    if (!participants || participants.length === 0) {
+      return {};
+    }
+
+    // Get unique participant user IDs (excluding duplicates)
+    const participantUserIds = [...new Set(participants.map((p) => p.user_id))];
+
+    // Batch fetch all participant profiles
+    const { data: participantProfiles, error: participantProfilesError } =
+      await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", participantUserIds);
+    if (participantProfilesError) throw participantProfilesError;
+
+    // Create a map of participant profiles by ID for O(1) lookups
+    const participantProfilesMap = (participantProfiles || []).reduce(
+      (acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {}
+    );
+
+    // Group participants by activity with profile data
+    participantsByActivity = participants.reduce((acc, participant) => {
+      const activityId = participant.activity_id;
+      const userProfile = participantProfilesMap[participant.user_id];
+
+      if (!acc[activityId]) acc[activityId] = [];
+      acc[activityId].push({
+        user_id: participant.user_id,
+        profile: userProfile || null,
+      });
+
+      return acc;
+    }, {});
+
+    return participantsByActivity;
+  } catch (error) {
+    console.error("Error fetching participants:", error);
     return {};
   }
-
-  // Get unique participant user IDs (excluding duplicates)
-  const participantUserIds = [...new Set(participants.map((p) => p.user_id))];
-
-  // Batch fetch all participant profiles
-  const { data: participantProfiles, error: participantProfilesError } =
-    await supabase
-      .from("profiles")
-      .select("id, display_name, avatar_url")
-      .in("id", participantUserIds);
-  if (participantProfilesError) throw participantProfilesError;
-
-  // Create a map of participant profiles by ID for O(1) lookups
-  const participantProfilesMap = (participantProfiles || []).reduce(
-    (acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    },
-    {}
-  );
-
-  // Group participants by activity with profile data
-  return participants.reduce((acc, participant) => {
-    const activityId = participant.activity_id;
-    const userProfile = participantProfilesMap[participant.user_id];
-
-    if (!acc[activityId]) acc[activityId] = [];
-
-    // Only add if we found the profile (graceful handling of missing profiles)
-    if (userProfile) {
-      acc[activityId].push({
-        id: participant.user_id,
-        display_name: userProfile.display_name,
-        avatar_url: userProfile.avatar_url,
-      });
-    }
-    return acc;
-  }, {});
 }
 
 export async function fetchFeed({ daysAhead = 14, currentUserId } = {}) {
