@@ -313,30 +313,38 @@ export default function Friends() {
                   No friends found.
                 </div>
               ) : (
-                <ul className="divide-y divide-gray-100">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {filteredFriends.map((p) => (
-                    <li key={p.id} className="py-3 flex items-center gap-3">
-                      <img
-                        src={
-                          p.avatar_url ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            p.display_name || "User"
-                          )}&background=0D8ABC&color=fff`
-                        }
-                        alt={p.display_name || "User"}
-                        className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
-                      />
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-800 text-base">
+                    <div
+                      key={p.id}
+                      className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-200 hover:border-blue-200"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <img
+                          src={
+                            p.avatar_url ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              p.display_name || "User"
+                            )}&background=0D8ABC&color=fff`
+                          }
+                          alt={p.display_name || "User"}
+                          className="w-16 h-16 rounded-full border-2 border-gray-200 shadow-sm object-cover mb-3"
+                        />
+                        <h3 className="font-semibold text-gray-900 text-base mb-1">
                           {p.display_name || "User"}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {p.id.slice(0, 8)}
-                        </span>
+                        </h3>
+                        <p className="text-xs text-gray-400 mb-3">
+                          {p.location || "Location not set"}
+                        </p>
+                        {p.bio && (
+                          <p className="text-sm text-gray-600 text-center line-clamp-2">
+                            {p.bio}
+                          </p>
+                        )}
                       </div>
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           ) : activeTab === "requests" ? (
@@ -346,71 +354,94 @@ export default function Friends() {
                   No requests.
                 </div>
               ) : (
-                <ul className="divide-y divide-gray-100">
-                  {incoming.map((f) => {
-                    const other = f.user_a === me ? f.user_b : f.user_a;
-                    const p = profilesMap[other];
-                    return (
-                      <li
-                        key={`${f.user_a}-${f.user_b}`}
-                        className="py-3 flex items-center gap-3"
-                      >
-                        <img
-                          src={
-                            p?.avatar_url ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              p?.display_name || "User"
-                            )}&background=0D8ABC&color=fff`
-                          }
-                          alt={p?.display_name || "User"}
-                          className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-800 text-base">
-                            {p?.display_name || "User"}
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            {other.slice(0, 8)}
-                          </span>
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-gray-600 mb-3">
+                    Incoming Requests
+                  </h4>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {incoming.map((f) => {
+                      const other = f.user_a === me ? f.user_b : f.user_a;
+                      const p = profilesMap[other];
+                      return (
+                        <div
+                          key={`${f.user_a}-${f.user_b}`}
+                          className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <img
+                              src={
+                                p?.avatar_url ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  p?.display_name || "User"
+                                )}&background=0D8ABC&color=fff`
+                              }
+                              alt={p?.display_name || "User"}
+                              className="w-16 h-16 rounded-full border-2 border-gray-200 shadow-sm object-cover mb-3"
+                            />
+                            <h3 className="font-semibold text-gray-900 text-base mb-1">
+                              {p?.display_name || "User"}
+                            </h3>
+                            <p className="text-xs text-gray-400 mb-4">
+                              {p?.location || "Location not set"}
+                            </p>
+                            <div className="flex gap-2 w-full">
+                              <button
+                                className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-60 transition-colors"
+                                disabled={!!busyIds[other]}
+                                onClick={() => handleAccept(other)}
+                              >
+                                {busyIds[other] ? "..." : "Accept"}
+                              </button>
+                              <button
+                                className="flex-1 px-3 py-2 rounded-lg text-sm font-medium border border-gray-300 hover:bg-gray-50 disabled:opacity-60 transition-colors"
+                                disabled={!!busyIds[other]}
+                                onClick={() => handleDecline(other)}
+                              >
+                                {busyIds[other] ? "..." : "Decline"}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="ml-auto flex gap-2">
-                          <button
-                            className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
-                            disabled={!!busyIds[other]}
-                            onClick={() => handleAccept(other)}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="px-3 py-1 rounded-lg text-xs border hover:bg-gray-50 disabled:opacity-60"
-                            disabled={!!busyIds[other]}
-                            onClick={() => handleDecline(other)}
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
               {outgoing.length > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-600 mb-2">
-                    Sent requests
+                <div className="mt-8">
+                  <h4 className="text-sm font-medium text-gray-600 mb-3">
+                    Sent Requests
                   </h4>
-                  <ul className="text-sm text-gray-600">
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {outgoing.map((f) => {
                       const other = f.user_a === me ? f.user_b : f.user_a;
                       const p = profilesMap[other];
                       return (
-                        <li key={`${f.user_a}-${f.user_b}`}>
-                          → {p?.display_name || other.slice(0, 8)}
-                        </li>
+                        <div
+                          key={`${f.user_a}-${f.user_b}`}
+                          className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center"
+                        >
+                          <img
+                            src={
+                              p?.avatar_url ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                p?.display_name || "User"
+                              )}&background=0D8ABC&color=fff`
+                            }
+                            alt={p?.display_name || "User"}
+                            className="w-12 h-12 rounded-full border border-gray-200 shadow-sm object-cover mx-auto mb-2"
+                          />
+                          <p className="font-medium text-gray-700 text-sm">
+                            {p?.display_name || "User"}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Request sent
+                          </p>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
@@ -444,43 +475,46 @@ export default function Friends() {
                     <h4 className="text-sm font-medium text-gray-600 mb-3">
                       Search Results
                     </h4>
-                    <ul className="divide-y divide-gray-100">
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                       {discover.map((p) => (
-                        <li key={p.id} className="py-3 flex items-center gap-3">
-                          <img
-                            src={
-                              p.avatar_url ||
-                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                p.display_name || "User"
-                              )}&background=0D8ABC&color=fff`
-                            }
-                            alt={p.display_name || "User"}
-                            className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
-                          />
-                          <div className="flex flex-col">
-                            <span className="font-medium text-gray-800 text-base">
+                        <div
+                          key={p.id}
+                          className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-200"
+                        >
+                          <div className="flex flex-col items-center text-center">
+                            <img
+                              src={
+                                p.avatar_url ||
+                                `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                  p.display_name || "User"
+                                )}&background=0D8ABC&color=fff`
+                              }
+                              alt={p.display_name || "User"}
+                              className="w-16 h-16 rounded-full border-2 border-gray-200 shadow-sm object-cover mb-3"
+                            />
+                            <h3 className="font-semibold text-gray-900 text-base mb-1">
                               {p.display_name || "User"}
-                            </span>
-                            <span className="text-xs text-gray-400">
-                              {p.id.slice(0, 8)}
-                            </span>
+                            </h3>
+                            <p className="text-xs text-gray-400 mb-4">
+                              {p.location || "Location not set"}
+                            </p>
+                            {hasPendingRequestTo(p.id) ? (
+                              <span className="w-full bg-gray-100 text-gray-500 px-3 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
+                                Request sent
+                              </span>
+                            ) : (
+                              <button
+                                className="w-full bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-60 transition-colors"
+                                disabled={!!busyIds[p.id]}
+                                onClick={() => handleSend(p.id)}
+                              >
+                                {busyIds[p.id] ? "Sending..." : "Add Friend"}
+                              </button>
+                            )}
                           </div>
-                          {hasPendingRequestTo(p.id) ? (
-                            <span className="ml-auto bg-gray-100 text-gray-500 px-3 py-1 rounded-lg text-xs cursor-not-allowed">
-                              Request sent
-                            </span>
-                          ) : (
-                            <button
-                              className="ml-auto bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
-                              disabled={!!busyIds[p.id]}
-                              onClick={() => handleSend(p.id)}
-                            >
-                              Add
-                            </button>
-                          )}
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )
               ) : nearbyPeople.length === 0 ? (
@@ -500,46 +534,48 @@ export default function Friends() {
                     <MapPin className="w-4 h-4" />
                     Nearby Sports Buddies ({currentUserLocation.location})
                   </h4>
-                  <ul className="divide-y divide-gray-100">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {nearbyPeople.map((p) => (
-                      <li key={p.id} className="py-3 flex items-center gap-3">
-                        <img
-                          src={
-                            p.avatar_url ||
-                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              p.display_name || "User"
-                            )}&background=0D8ABC&color=fff`
-                          }
-                          alt={p.display_name || "User"}
-                          className="w-10 h-10 rounded-full border border-gray-200 shadow-sm object-cover"
-                        />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-800 text-base">
+                      <div
+                        key={p.id}
+                        className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex flex-col items-center text-center">
+                          <img
+                            src={
+                              p.avatar_url ||
+                              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                p.display_name || "User"
+                              )}&background=0D8ABC&color=fff`
+                            }
+                            alt={p.display_name || "User"}
+                            className="w-16 h-16 rounded-full border-2 border-gray-200 shadow-sm object-cover mb-3"
+                          />
+                          <h3 className="font-semibold text-gray-900 text-base mb-1">
                             {p.display_name || "User"}
-                          </span>
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
+                          </h3>
+                          <p className="text-xs text-gray-400 mb-4 flex items-center gap-1 justify-center">
                             {p.distance
                               ? `${p.distance.toFixed(1)}km away`
                               : p.location}
-                          </span>
+                          </p>
+                          {hasPendingRequestTo(p.id) ? (
+                            <span className="w-full bg-gray-100 text-gray-500 px-3 py-2 rounded-lg text-sm font-medium cursor-not-allowed">
+                              Request sent
+                            </span>
+                          ) : (
+                            <button
+                              className="w-full bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-60 transition-colors"
+                              disabled={!!busyIds[p.id]}
+                              onClick={() => handleSend(p.id)}
+                            >
+                              {busyIds[p.id] ? "Sending..." : "Add Friend"}
+                            </button>
+                          )}
                         </div>
-                        {hasPendingRequestTo(p.id) ? (
-                          <span className="ml-auto bg-gray-100 text-gray-500 px-3 py-1 rounded-lg text-xs cursor-not-allowed">
-                            Request sent
-                          </span>
-                        ) : (
-                          <button
-                            className="ml-auto bg-blue-500 text-white px-3 py-1 rounded-lg text-xs hover:bg-blue-600 disabled:opacity-60"
-                            disabled={!!busyIds[p.id]}
-                            onClick={() => handleSend(p.id)}
-                          >
-                            Add
-                          </button>
-                        )}
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
