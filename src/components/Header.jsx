@@ -9,6 +9,7 @@ import {
   Users,
   Menu,
   X,
+  Calendar,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function Header({ children }) {
   const getCurrentView = () => {
     const path = location.pathname;
     if (path === "/app" || path === "/app/") return "feed";
+    if (path.includes("/calendar")) return "calendar";
     if (path.includes("/create")) return "create";
     if (path.includes("/friends")) return "friends";
     if (path.includes("/profile")) return "profile";
@@ -133,6 +135,13 @@ export default function Header({ children }) {
       icon: Home,
       gradient: "from-blue-500 to-purple-600",
       hoverColor: "hover:text-blue-600 hover:bg-blue-50",
+    },
+    {
+      id: "calendar",
+      label: "Calendar",
+      icon: Calendar,
+      gradient: "from-purple-500 to-pink-600",
+      hoverColor: "hover:text-purple-600 hover:bg-purple-50",
     },
     {
       id: "create",
