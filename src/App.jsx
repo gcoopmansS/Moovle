@@ -1,124 +1,101 @@
-import { useState, useEffect, useCallback } from "react";
-import { useSupabaseAuth } from "./hooks/useSupabaseAuth";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabase";
-import AuthPage from "./pages/AuthPage";
 
-import ActivityFeed from "./components/ActivityFeed";
-import Header from "./components/Header";
-import NavigationFooter from "./components/NavigationFooter";
-import ActivityForm from "./components/ActivityForm";
-import Friends from "./components/Friends";
-import ProfilePage from "./components/ProfilePage";
+// Page components
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SignupPage from "./pages/SignupPage";
+import ActivityFeedPage from "./pages/ActivityFeedPage";
+import CreateActivityPage from "./pages/CreateActivityPage";
+import FriendsPage from "./pages/FriendsPage";
+import ProfilePage from "./pages/ProfilePage";
 
-function App() {
-  const { user, loading, signOut } = useSupabaseAuth();
-  const [selectedButton, setSelectedButton] = useState("feed");
-  const [userProfile, setUserProfile] = useState(null);
+// App components
+import ProtectedRoute from "./components/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
 
-  // Fetch user profile data
-  const fetchUserProfile = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          "display_name, avatar_url, location, location_lat, location_lng"
-        )
-        .eq("id", user.id)
-        .single();
-
-      if (error && error.code !== "PGRST116") {
-        console.error("Error fetching profile:", error);
-        return;
-      }
-
-      if (data) {
-        let avatarUrl = data.avatar_url;
-
-        // If avatar_url exists and looks like a storage path (not a full URL),
-        // generate a fresh signed URL
-        if (avatarUrl && !avatarUrl.startsWith("http")) {
-          try {
-            const { data: signed, error: signErr } = await supabase.storage
-              .from("avatars")
-              .createSignedUrl(avatarUrl, 60 * 60 * 24); // 24 hours
-            if (!signErr && signed?.signedUrl) {
-              avatarUrl = signed.signedUrl;
-            }
-          } catch (signError) {
-            console.error("Error generating signed URL:", signError);
-            // Keep the original path, fallback will handle it
-          }
-        }
-
-        setUserProfile({
-          ...data,
-          avatar_url: avatarUrl,
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    fetchUserProfile();
-  }, [fetchUserProfile]);
-
-  if (loading) return <div className="p-6">Loading…</div>;
-  if (!user) return <AuthPage />;
-
-  function renderMainContent() {
-    if (selectedButton === "create") {
-      // ActivityForm should call Supabase (createActivity) and then fire onCreated
-      return <ActivityForm onCreated={() => setSelectedButton("feed")} />;
-    } else if (selectedButton === "feed") {
-      // ActivityFeed should fetch from Supabase (fetchFeed)
-      return <ActivityFeed />;
-    } else if (selectedButton === "friends") {
-      return <Friends />;
-    } else if (selectedButton === "profile") {
-      return <ProfilePage onProfileUpdate={fetchUserProfile} />;
-    }
-  }
-
-  function handleFooterClick(buttonClicked) {
-    setSelectedButton(buttonClicked);
-  }
-
-  function handleProfileClick() {
-    setSelectedButton("profile");
-  }
-
-  async function handleSignOut() {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  }
-
+// Placeholder component for activity details
+function ActivityDetailsPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      <Header
-        onProfileClick={handleProfileClick}
-        onSignOut={handleSignOut}
-        user={{
-          ...user,
-          display_name: userProfile?.display_name,
-          avatar_url: userProfile?.avatar_url,
-        }}
-      />
-      <main className="pt-14 pb-16">{renderMainContent()}</main>
-      <NavigationFooter
-        onClickingCreate={() => handleFooterClick("create")}
-        onClickingFeed={() => handleFooterClick("feed")}
-        onClickingFriends={() => handleFooterClick("friends")}
-        selectedButton={selectedButton}
-      />
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">
+        Activity Details
+      </h1>
+      <p className="text-gray-600">Activity details page coming soon...</p>
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Get initial session
+    const getSession = async () => {
+      await supabase.auth.getSession();
+      setLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => {
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center animate-pulse">
+            <span className="text-white font-bold text-sm">M</span>
+          </div>
+          <span className="text-lg font-semibold text-gray-700">
+            Loading...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Router>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+
+        {/* Protected App Routes */}
+        <Route
+          path="/app"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ActivityFeedPage />} />
+          <Route path="create" element={<CreateActivityPage />} />
+          <Route path="friends" element={<FriendsPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="activity/:id" element={<ActivityDetailsPage />} />
+        </Route>
+
+        {/* Redirect unknown routes */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
+}

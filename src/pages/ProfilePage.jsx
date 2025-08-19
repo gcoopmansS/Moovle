@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { supabase } from "../lib/supabase";
 import { Camera, Save, User, LogOut } from "lucide-react";
-import LocationInput from "./LocationInput";
+import LocationInput from "../components/LocationInput";
 
 export default function ProfilePage({ onProfileUpdate }) {
   const { user, signOut } = useSupabaseAuth();

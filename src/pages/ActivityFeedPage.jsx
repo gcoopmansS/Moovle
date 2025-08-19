@@ -3,10 +3,10 @@ import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { fetchMyActivities } from "../api/activities";
 import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
-import ActivityCard from "./ActivityCard";
-import MyActivityCard from "./MyActivityCard";
+import ActivityCard from "../components/ActivityCard";
+import MyActivityCard from "../components/MyActivityCard";
 
-export default function ActivityFeed() {
+export default function ActivityFeedPage() {
   const { user } = useSupabaseAuth();
   const [availableActivities, setAvailableActivities] = useState([]);
   const [myActivities, setMyActivities] = useState([]);

@@ -14,7 +14,7 @@ import {
 } from "../api/profiles";
 import { supabase } from "../lib/supabase";
 
-export default function Friends() {
+export default function FriendsPage() {
   const { user, loading } = useSupabaseAuth();
   const me = user?.id;
 

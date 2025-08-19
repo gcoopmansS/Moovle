@@ -8,9 +8,9 @@ import { IoTennisballOutline } from "react-icons/io5";
 import { Users, Check } from "lucide-react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { ActivityService } from "../services";
-import LocationInput from "./LocationInput";
-import FriendInviteModal from "./FriendInviteModal";
-// import ActivityTemplates from "./ActivityTemplates";
+import LocationInput from "../components/LocationInput";
+import FriendInviteModal from "../components/FriendInviteModal";
+// import ActivityTemplates from "../components/ActivityTemplates";
 
 const activityTypes = [
   {
@@ -35,7 +35,7 @@ const activityTypes = [
   },
 ];
 
-export default function ActivityForm() {
+export default function CreateActivityPage() {
   const { user } = useSupabaseAuth();
 
   const [selectedType, setSelectedType] = useState("running");
