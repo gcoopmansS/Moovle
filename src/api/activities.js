@@ -183,10 +183,12 @@ export async function fetchMyActivities({
   // Get activities the user has joined as a participant
   const { data: participantData, error: participantError } = await supabase
     .from("activity_participants")
-    .select(`
+    .select(
+      `
       activity_id,
       activities!inner (*)
-    `)
+    `
+    )
     .eq("user_id", currentUserId)
     .gte("activities.starts_at", now)
     .lte("activities.starts_at", future);
@@ -208,7 +210,9 @@ export async function fetchMyActivities({
   }, []);
 
   // Sort by start time
-  uniqueActivities.sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+  uniqueActivities.sort(
+    (a, b) => new Date(a.starts_at) - new Date(b.starts_at)
+  );
 
   if (uniqueActivities.length === 0) {
     return [];

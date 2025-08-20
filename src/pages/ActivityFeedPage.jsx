@@ -3,81 +3,64 @@ import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
 import ActivityCard from "../components/ActivityCard";
-import {
-  Search,
-  Filter,
-  RefreshCw,
-  Compass,
-  MapPin,
-  Clock,
-} from "lucide-react";
+import { Compass, Filter } from "lucide-react";
 
 export default function ActivityFeedPage() {
   const { user } = useSupabaseAuth();
   const [availableActivities, setAvailableActivities] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [joining, setJoining] = useState({}); // activityId -> boolean
   const [joinedMap, setJoinedMap] = useState({}); // activityId -> true/false
-  const [searchQuery, setSearchQuery] = useState("");
-  const [locationFilter, setLocationFilter] = useState("");
+  const [selectedSportType, setSelectedSportType] = useState(""); // sport type filter
 
-  const load = useCallback(
-    async (isRefresh = false) => {
-      if (!user?.id) return;
+  const load = useCallback(async () => {
+    if (!user?.id) return;
 
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+    setLoading(true);
 
-      try {
-        // Load available activities (discovery feed)
-        const availableData = await ActivityService.getActivityFeed({
-          currentUserId: user.id,
-        });
+    try {
+      // Load available activities (discovery feed)
+      const availableData = await ActivityService.getActivityFeed({
+        currentUserId: user.id,
+      });
 
-        // Filter out invitations and activities user already joined
-        const discoverableActivities = availableData.filter(
-          (activity) =>
-            !activity.isInvited || activity.invitationStatus !== "pending"
-        );
+      // Filter out invitations and activities user already joined
+      const discoverableActivities = availableData.filter(
+        (activity) =>
+          !activity.isInvited || activity.invitationStatus !== "pending"
+      );
 
-        setAvailableActivities(discoverableActivities);
+      setAvailableActivities(discoverableActivities);
 
-        // Check which activities user has already joined
-        if (discoverableActivities.length > 0) {
-          const activityIds = discoverableActivities.map((a) => a.id);
+      // Check which activities user has already joined
+      if (discoverableActivities.length > 0) {
+        const activityIds = discoverableActivities.map((a) => a.id);
 
-          const { data: participants, error } = await supabase
-            .from("activity_participants")
-            .select("activity_id")
-            .eq("user_id", user.id)
-            .in("activity_id", activityIds);
+        const { data: participants, error } = await supabase
+          .from("activity_participants")
+          .select("activity_id")
+          .eq("user_id", user.id)
+          .in("activity_id", activityIds);
 
-          if (error) {
-            console.warn("Error fetching participants:", error);
-          } else {
-            const joinedActivityIds = new Set(
-              participants?.map((p) => p.activity_id) || []
-            );
-            const joinedMap = Object.fromEntries(
-              activityIds.map((id) => [id, joinedActivityIds.has(id)])
-            );
-            setJoinedMap(joinedMap);
-          }
+        if (error) {
+          console.warn("Error fetching participants:", error);
+        } else {
+          const joinedActivityIds = new Set(
+            participants?.map((p) => p.activity_id) || []
+          );
+          const joinedMap = Object.fromEntries(
+            activityIds.map((id) => [id, joinedActivityIds.has(id)])
+          );
+          setJoinedMap(joinedMap);
         }
-      } catch (error) {
-        console.error("Error loading activity feed:", error);
-        setAvailableActivities([]);
-      } finally {
-        setLoading(false);
-        setRefreshing(false);
       }
-    },
-    [user]
-  );
+    } catch (error) {
+      console.error("Error loading activity feed:", error);
+      setAvailableActivities([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     load();
@@ -114,26 +97,77 @@ export default function ActivityFeedPage() {
     }
   }
 
-  const handleRefresh = () => {
-    load(true);
+  // Group activities by date for timeline display
+  const groupActivitiesByDate = (activities) => {
+    // Filter by sport type if selected
+    let filteredActivities = activities;
+    if (selectedSportType) {
+      filteredActivities = activities.filter((activity) => {
+        return activity.type === selectedSportType;
+      });
+    }
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+
+    const groups = {
+      today: [],
+      tomorrow: [],
+      thisWeek: [],
+      later: [],
+    };
+
+    filteredActivities.forEach((activity) => {
+      const activityDate = new Date(activity.starts_at);
+      const activityDay = new Date(
+        activityDate.getFullYear(),
+        activityDate.getMonth(),
+        activityDate.getDate()
+      );
+
+      if (activityDay.getTime() === today.getTime()) {
+        groups.today.push(activity);
+      } else if (activityDay.getTime() === tomorrow.getTime()) {
+        groups.tomorrow.push(activity);
+      } else if (activityDate < nextWeek) {
+        groups.thisWeek.push(activity);
+      } else {
+        groups.later.push(activity);
+      }
+    });
+
+    // Sort activities within each group by time
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+    });
+
+    return groups;
   };
 
-  // Filter activities based on search and location
-  const filteredActivities = availableActivities.filter((activity) => {
-    const matchesSearch =
-      !searchQuery ||
-      activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.sport_type?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Get unique sport types for filter dropdown
+  const getUniqueSportTypes = (activities) => {
+    console.log("Activities for sport types:", activities); // Debug log
+    const sportTypes = activities
+      .map((activity) => {
+        // The correct field name is 'type'
+        const sportType = activity.type;
+        console.log(`Activity "${activity.title}" has sport type:`, sportType); // Debug log
+        return sportType;
+      })
+      .filter(Boolean) // Remove null/undefined values
+      .filter((type, index, array) => array.indexOf(type) === index) // Remove duplicates
+      .sort(); // Alphabetical order
 
-    const matchesLocation =
-      !locationFilter ||
-      activity.location_text
-        ?.toLowerCase()
-        .includes(locationFilter.toLowerCase());
+    console.log("Unique sport types found:", sportTypes); // Debug log
+    return sportTypes;
+  };
 
-    return matchesSearch && matchesLocation;
-  });
+  const activityGroups = groupActivitiesByDate(availableActivities);
+  const uniqueSportTypes = getUniqueSportTypes(availableActivities);
 
   if (loading) {
     return (
@@ -149,157 +183,194 @@ export default function ActivityFeedPage() {
   return (
     <div className="max-w-4xl mx-auto px-3 py-6 space-y-6">
       {/* Header */}
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
-            <Compass className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">Activity Feed</h1>
-        </div>
-        <p className="text-gray-600">
-          Discover new sports activities and connect with people
-        </p>
-      </div>
-
-      {/* Search and Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
-        <div className="flex gap-4">
-          {/* Search */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search activities, sports, or keywords..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
-
-          {/* Location Filter */}
-          <div className="relative min-w-0 flex-shrink-0 w-48">
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Location..."
-              value={locationFilter}
-              onChange={(e) => setLocationFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-            />
-          </div>
-
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center gap-2"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-            />
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </button>
-        </div>
-
-        {/* Active Filters */}
-        {(searchQuery || locationFilter) && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-600">Active filters:</span>
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
-                Search: "{searchQuery}"
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="text-blue-500 hover:text-blue-700 cursor-pointer"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {locationFilter && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
-                Location: "{locationFilter}"
-                <button
-                  onClick={() => setLocationFilter("")}
-                  className="text-green-500 hover:text-green-700 cursor-pointer"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Activity Count */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
-          {filteredActivities.length === availableActivities.length
-            ? `${filteredActivities.length} activities available`
-            : `${filteredActivities.length} of ${availableActivities.length} activities`}
-        </h2>
-        {filteredActivities.length !== availableActivities.length && (
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setLocationFilter("");
-            }}
-            className="text-sm text-blue-600 hover:text-blue-700 cursor-pointer"
-          >
-            Clear filters
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <Compass className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Discover Activities
+            </h1>
+            <p className="text-gray-600 text-sm">
+              Find sports activities near you
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* Sport Type Filter */}
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <select
+              value={selectedSportType}
+              onChange={(e) => setSelectedSportType(e.target.value)}
+              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm min-w-[140px]"
+            >
+              <option value="">All Sports</option>
+              {uniqueSportTypes.length > 0 ? (
+                uniqueSportTypes.map((sportType) => (
+                  <option key={sportType} value={sportType}>
+                    {sportType}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No sport types available</option>
+              )}
+            </select>
+          </div>
+        </div>
       </div>
 
-      {/* Activities Grid */}
-      {filteredActivities.length === 0 ? (
+      {/* Timeline Sections */}
+      {availableActivities.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            {searchQuery || locationFilter ? (
-              <Search className="w-8 h-8 text-gray-400" />
-            ) : (
-              <Compass className="w-8 h-8 text-gray-400" />
-            )}
+            <Compass className="w-8 h-8 text-gray-400" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {searchQuery || locationFilter
-              ? "No activities match your search"
-              : "No activities available right now"}
+            No activities available right now
           </h3>
           <p className="text-gray-600 text-sm mb-4">
-            {searchQuery || locationFilter
-              ? "Try adjusting your search criteria or check back later."
-              : "Check back later for new activities or create your own!"}
+            Check back later for new activities or create your own!
           </p>
-          {(searchQuery || locationFilter) && (
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setLocationFilter("");
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
-            >
-              <Filter className="w-4 h-4" />
-              Clear Filters
-            </button>
-          )}
+        </div>
+      ) : Object.values(activityGroups).every((group) => group.length === 0) ? (
+        <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Filter className="w-8 h-8 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No {selectedSportType} activities found
+          </h3>
+          <p className="text-gray-600 text-sm mb-4">
+            Try selecting a different sport type or check back later.
+          </p>
+          <button
+            onClick={() => setSelectedSportType("")}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            <Filter className="w-4 h-4" />
+            Show All Sports
+          </button>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-          {filteredActivities.map((activity) => {
-            const joined = !!joinedMap[activity.id];
-            const busy = !!joining[activity.id];
-            return (
-              <ActivityCard
-                key={activity.id}
-                activity={activity}
-                joined={joined}
-                busy={busy}
-                onJoin={() => handleJoin(activity.id)}
-                onLeave={() => handleLeave(activity.id)}
-              />
-            );
-          })}
+        <div className="space-y-8">
+          {/* Today */}
+          {activityGroups.today.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-bold text-gray-900">Today</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                <span className="text-sm text-gray-500 font-medium">
+                  {activityGroups.today.length} activities
+                </span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                {activityGroups.today.map((activity) => {
+                  const joined = !!joinedMap[activity.id];
+                  const busy = !!joining[activity.id];
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      joined={joined}
+                      busy={busy}
+                      onJoin={() => handleJoin(activity.id)}
+                      onLeave={() => handleLeave(activity.id)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Tomorrow */}
+          {activityGroups.tomorrow.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-bold text-gray-900">Tomorrow</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                <span className="text-sm text-gray-500 font-medium">
+                  {activityGroups.tomorrow.length} activities
+                </span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                {activityGroups.tomorrow.map((activity) => {
+                  const joined = !!joinedMap[activity.id];
+                  const busy = !!joining[activity.id];
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      joined={joined}
+                      busy={busy}
+                      onJoin={() => handleJoin(activity.id)}
+                      onLeave={() => handleLeave(activity.id)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* This Week */}
+          {activityGroups.thisWeek.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-bold text-gray-900">This Week</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                <span className="text-sm text-gray-500 font-medium">
+                  {activityGroups.thisWeek.length} activities
+                </span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                {activityGroups.thisWeek.map((activity) => {
+                  const joined = !!joinedMap[activity.id];
+                  const busy = !!joining[activity.id];
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      joined={joined}
+                      busy={busy}
+                      onJoin={() => handleJoin(activity.id)}
+                      onLeave={() => handleLeave(activity.id)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Later */}
+          {activityGroups.later.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <h2 className="text-xl font-bold text-gray-900">Later</h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
+                <span className="text-sm text-gray-500 font-medium">
+                  {activityGroups.later.length} activities
+                </span>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+                {activityGroups.later.map((activity) => {
+                  const joined = !!joinedMap[activity.id];
+                  const busy = !!joining[activity.id];
+                  return (
+                    <ActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      joined={joined}
+                      busy={busy}
+                      onJoin={() => handleJoin(activity.id)}
+                      onLeave={() => handleLeave(activity.id)}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
