@@ -1,44 +1,91 @@
+// Import React hooks and routing utilities
 import { useEffect, useState, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { fetchMyActivities } from "../api/activities";
 import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
-import MyActivityCard from "../components/MyActivityCard";
+import CalendarActivityCard from "../components/CalendarActivityCard";
 import {
   Calendar,
   Crown,
-  UserCheck,
+  Check,
   Mail,
   CheckCircle,
   Clock,
   Plus,
   MapPin,
+  UserCheck,
 } from "lucide-react";
 
+/**
+ * MyCalendarPage - Personal activity management and schedule view with Timeline Layout
+ *
+ * This redesigned page provides a modern timeline-based view of the user's sports activities:
+ * - Sidebar with quick stats and pending invitations
+ * - Main timeline organized by time periods (Today, Tomorrow, This Week, Later)
+ * - Clean, spacious layout optimized for personal activity management
+ *
+ * Key Features:
+ * - Timeline-based organization by date
+ * - Compact sidebar with overview stats
+ * - Priority display of pending invitations
+ * - Accept/decline invitation functionality
+ * - Leave activity functionality
+ * - Success message handling from navigation
+ * - Auto-refresh when navigating to page
+ *
+ * This complements ActivityFeedPage which focuses on discovery,
+ * while this page focuses on personal activity management with better visual hierarchy.
+ */
 export default function MyCalendarPage() {
+  // Authentication and routing hooks
   const { user } = useSupabaseAuth();
   const location = useLocation();
-  const [myCreatedActivities, setMyCreatedActivities] = useState([]);
-  const [myJoinedActivities, setMyJoinedActivities] = useState([]);
-  const [pendingInvitations, setPendingInvitations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState({}); // activityId -> boolean
-  const [successMessage, setSuccessMessage] = useState("");
 
+  // State management for different types of activities
+  const [myCreatedActivities, setMyCreatedActivities] = useState([]); // Activities user created
+  const [myJoinedActivities, setMyJoinedActivities] = useState([]); // Activities user joined
+  const [pendingInvitations, setPendingInvitations] = useState([]); // Invitations awaiting response
+  const [loading, setLoading] = useState(true); // Loading state for data fetching
+  const [joining, setJoining] = useState({}); // Track join/leave operations (activityId -> boolean)
+  const [successMessage, setSuccessMessage] = useState(""); // Success feedback message
+
+  /**
+   * Load and categorize user's activities and invitations
+   *
+   * This function fetches data from two sources:
+   * 1. fetchMyActivities: Gets activities user created or joined
+   * 2. ActivityService.getActivityFeed: Gets activities including invitations
+   *
+   * Then categorizes them into:
+   * - Created activities (user is the organizer)
+   * - Joined activities (user is a participant)
+   * - Pending invitations (awaiting user response)
+   *
+   * Includes timeout and error recovery mechanisms
+   */
   const load = useCallback(async () => {
     if (!user?.id) return;
 
     setLoading(true);
 
     try {
-      // Load user's activities and invitations
-      const [myData, invitationsData] = await Promise.all([
-        fetchMyActivities({ currentUserId: user.id }),
-        ActivityService.getActivityFeed({ currentUserId: user.id }),
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout")), 15000);
+      });
+
+      // Fetch both personal activities and feed data in parallel for efficiency
+      const [myData, invitationsData] = await Promise.race([
+        Promise.all([
+          fetchMyActivities({ currentUserId: user.id }),
+          ActivityService.getActivityFeed({ currentUserId: user.id }),
+        ]),
+        timeoutPromise,
       ]);
 
-      // Separate created activities from joined activities
+      // Categorize activities by user's relationship to them
       const createdActivities = myData.filter(
         (activity) => activity.creator_id === user.id
       );
@@ -46,12 +93,13 @@ export default function MyCalendarPage() {
         (activity) => activity.creator_id !== user.id
       );
 
-      // Extract pending invitations
+      // Find invitations that need user response
       const pendingInvites = invitationsData.filter(
         (activity) =>
           activity.isInvited && activity.invitationStatus === "pending"
       );
 
+      // Update state with categorized data
       setMyCreatedActivities(createdActivities);
       setMyJoinedActivities(joinedActivities);
       setPendingInvitations(pendingInvites);
@@ -60,6 +108,13 @@ export default function MyCalendarPage() {
       setMyCreatedActivities([]);
       setMyJoinedActivities([]);
       setPendingInvitations([]);
+
+      // If it's a timeout error, provide helpful feedback
+      if (error.message === "Request timeout") {
+        console.warn(
+          "Calendar request timed out - user may have poor connection"
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -68,6 +123,37 @@ export default function MyCalendarPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Handle page visibility changes - retry loading when user returns to tab
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      // If page becomes visible and we have a user but no activities loaded, retry
+      if (
+        !document.hidden &&
+        user?.id &&
+        myCreatedActivities.length === 0 &&
+        myJoinedActivities.length === 0 &&
+        pendingInvitations.length === 0 &&
+        !loading
+      ) {
+        console.log("Page became visible - retrying calendar load");
+        load();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [
+    load,
+    user,
+    myCreatedActivities.length,
+    myJoinedActivities.length,
+    pendingInvitations.length,
+    loading,
+  ]);
 
   // Refresh data when navigating to this page to catch joined activities
   useEffect(() => {
@@ -156,38 +242,96 @@ export default function MyCalendarPage() {
     }
   }
 
+  async function handleCancel(activityId) {
+    if (!user?.id) return;
+    setJoining((s) => ({ ...s, [activityId]: true }));
+    try {
+      await ActivityService.cancelActivity(activityId, user.id);
+      setMyCreatedActivities((prev) => prev.filter((a) => a.id !== activityId));
+      setSuccessMessage("Activity cancelled successfully.");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (error) {
+      console.error("Failed to cancel activity:", error);
+    } finally {
+      setJoining((s) => ({ ...s, [activityId]: false }));
+    }
+  }
+
+  function handleEdit(activityId) {
+    // Implement navigation to edit page or open modal
+    // Example: navigate(`/activities/${activityId}/edit`);
+    alert("Edit activity " + activityId);
+  }
+
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 animate-spin text-blue-600" />
-          <span className="text-gray-600">Loading your calendar...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-8 h-8 animate-spin text-white" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Loading Your Calendar
+          </h3>
+          <p className="text-gray-600">
+            Preparing your personal activity schedule...
+          </p>
         </div>
       </div>
     );
   }
 
   const allMyActivities = [...myCreatedActivities, ...myJoinedActivities];
+
+  // Group activities by time periods for timeline view
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  const groupedActivities = {
+    overdue: allMyActivities.filter(
+      (activity) => new Date(activity.starts_at) < today
+    ),
+    today: allMyActivities.filter((activity) => {
+      const activityDate = new Date(activity.starts_at);
+      return activityDate >= today && activityDate < tomorrow;
+    }),
+    tomorrow: allMyActivities.filter((activity) => {
+      const activityDate = new Date(activity.starts_at);
+      return (
+        activityDate >= tomorrow &&
+        activityDate < new Date(tomorrow.getTime() + 24 * 60 * 60 * 1000)
+      );
+    }),
+    thisWeek: allMyActivities.filter((activity) => {
+      const activityDate = new Date(activity.starts_at);
+      const dayAfterTomorrow = new Date(
+        tomorrow.getTime() + 24 * 60 * 60 * 1000
+      );
+      return activityDate >= dayAfterTomorrow && activityDate < nextWeek;
+    }),
+    later: allMyActivities.filter(
+      (activity) => new Date(activity.starts_at) >= nextWeek
+    ),
+  };
+
+  // Sort activities within each group
+  Object.keys(groupedActivities).forEach((key) => {
+    groupedActivities[key].sort(
+      (a, b) => new Date(a.starts_at) - new Date(b.starts_at)
+    );
+  });
+
   const upcomingActivities = allMyActivities
     .filter((activity) => new Date(activity.starts_at) >= new Date())
     .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
     .slice(0, 3);
 
   return (
-    <div className="max-w-4xl mx-auto px-3 py-6 space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">My Calendar</h1>
-        </div>
-        <p className="text-gray-600">
-          Your personal sports schedule and activities
-        </p>
-      </div>
-
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
       {/* Success Message */}
       {successMessage && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
@@ -196,194 +340,262 @@ export default function MyCalendarPage() {
         </div>
       )}
 
-      {/* Pending Invitations - Priority Section */}
-      {pendingInvitations.length > 0 && (
-        <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl border border-orange-200 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Mail className="w-5 h-5 text-orange-600" />
-              Pending Invitations
-            </h2>
-            <span className="text-sm text-orange-600 font-medium bg-orange-100 px-2 py-1 rounded-full">
-              {pendingInvitations.length} waiting
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {pendingInvitations.map((activity) => {
-              const busy = !!joining[activity.id];
-              return (
-                <div
-                  key={activity.id}
-                  className="bg-white rounded-xl border border-orange-200 p-4"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-gray-900 text-base mb-1">
-                        {activity.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        {activity.description || "No description provided"}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(activity.starts_at).toLocaleDateString()}
-                        </span>
-                        {activity.location_text && (
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {activity.location_text}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="ml-3 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded-full flex items-center gap-1">
-                      <Mail className="w-3 h-3" />
-                      Invited
-                    </div>
+      <div className="grid lg:grid-cols-4 gap-8">
+        {/* Left Sidebar - Quick Stats & Invitations */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Stats Cards */}
+          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Overview
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-amber-600" />
                   </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      disabled={busy}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm cursor-pointer"
-                      onClick={() => handleJoinFromInvitation(activity.id)}
-                    >
-                      {busy ? "Accepting..." : "Accept"}
-                    </button>
-                    <button
-                      disabled={busy}
-                      className="flex-1 px-4 py-2 bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm cursor-pointer"
-                      onClick={() => handleDeclineInvitation(activity.id)}
-                    >
-                      {busy ? "Declining..." : "Decline"}
-                    </button>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {myCreatedActivities.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Organized</div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
+                    <UserCheck className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {myJoinedActivities.length}
+                    </div>
+                    <div className="text-sm text-gray-600">Joined</div>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                    <Clock className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      {upcomingActivities.length}
+                    </div>
+                    <div className="text-sm text-gray-600">This week</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Quick Overview */}
-      {allMyActivities.length > 0 && (
-        <div className="grid md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <Crown className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
-              {myCreatedActivities.length}
+          {/* Pending Invitations */}
+          {pendingInvitations.length > 0 && (
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Mail className="w-5 h-5 text-orange-600" />
+                <h3 className="font-semibold text-gray-900">Invitations</h3>
+                <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                  {pendingInvitations.length}
+                </span>
+              </div>
+              <div className="space-y-3">
+                {pendingInvitations.map((activity) => {
+                  const busy = !!joining[activity.id];
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-white rounded-xl border border-orange-200 p-4"
+                    >
+                      <h4 className="font-medium text-gray-900 text-sm mb-2">
+                        {activity.title}
+                      </h4>
+                      <div className="flex gap-2">
+                        <button
+                          disabled={busy}
+                          className="flex-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-60"
+                          onClick={() => handleJoinFromInvitation(activity.id)}
+                        >
+                          {busy ? "..." : "Accept"}
+                        </button>
+                        <button
+                          disabled={busy}
+                          className="flex-1 px-3 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-60"
+                          onClick={() => handleDeclineInvitation(activity.id)}
+                        >
+                          {busy ? "..." : "Decline"}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-            <div className="text-sm text-gray-600">Created</div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <UserCheck className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
-              {myJoinedActivities.length}
-            </div>
-            <div className="text-sm text-gray-600">Joined</div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <Clock className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <div className="text-2xl font-bold text-gray-900">
-              {upcomingActivities.length}
-            </div>
-            <div className="text-sm text-gray-600">Upcoming</div>
-          </div>
-        </div>
-      )}
-
-      {/* My Created Activities */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <Crown className="w-5 h-5 text-blue-600" />
-            Activities I Created
-          </h2>
-          {myCreatedActivities.length > 0 && (
-            <span className="text-sm text-blue-600 font-medium bg-blue-100 px-2 py-1 rounded-full">
-              {myCreatedActivities.length} activities
-            </span>
           )}
         </div>
 
-        {myCreatedActivities.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
-            <Crown className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-gray-900 mb-1">
-              No activities created yet
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Create your first activity to start organizing sports events.
-            </p>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer">
-              <Plus className="w-4 h-4" />
-              Create Activity
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {myCreatedActivities
-              .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
-              .map((activity, index) => (
-                <MyActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  isNext={index === 0}
-                  isCreator={true}
-                  onLeave={handleLeave}
-                  busy={!!joining[activity.id]}
-                />
-              ))}
-          </div>
-        )}
-      </div>
+        {/* Main Content - Timeline View */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Timeline View - Activities grouped by time periods */}
+          {allMyActivities.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
+              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No activities yet
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Create your first activity or join one from the Activity Feed.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  Create Activity
+                </button>
+                <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                  <Plus className="w-4 h-4" />
+                  Find Activities
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Overdue Activities */}
+              {groupedActivities.overdue.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Overdue
+                    </h3>
+                    <span className="text-sm bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-medium">
+                      {groupedActivities.overdue.length}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedActivities.overdue.map((activity) => (
+                      <CalendarActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        isNext={false}
+                        isCreator={activity.creator_id === user.id}
+                        userId={user.id}
+                        onLeave={handleLeave}
+                        onCancel={
+                          activity.creator_id === user.id
+                            ? handleCancel
+                            : undefined
+                        }
+                        onEdit={
+                          activity.creator_id === user.id
+                            ? handleEdit
+                            : undefined
+                        }
+                        busy={!!joining[activity.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {/* Activities I Joined */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-green-600" />
-            Activities I Joined
-          </h2>
-          {myJoinedActivities.length > 0 && (
-            <span className="text-sm text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full">
-              {myJoinedActivities.length} activities
-            </span>
+              {/* Today's Activities */}
+              {groupedActivities.today.length > 0 && (
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
+                      Today
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedActivities.today.map((activity, index) => (
+                      <CalendarActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        isNext={index === 0}
+                        isCreator={activity.creator_id === user.id}
+                        userId={user.id}
+                        onLeave={handleLeave}
+                        busy={!!joining[activity.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tomorrow's Activities */}
+              {groupedActivities.tomorrow.length > 0 && (
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
+                      Tomorrow
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedActivities.tomorrow.map((activity) => (
+                      <CalendarActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        isNext={false}
+                        isCreator={activity.creator_id === user.id}
+                        userId={user.id}
+                        onLeave={handleLeave}
+                        busy={!!joining[activity.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* This Week's Activities */}
+              {groupedActivities.thisWeek.length > 0 && (
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
+                      This week
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedActivities.thisWeek.map((activity) => (
+                      <CalendarActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        isNext={false}
+                        isCreator={activity.creator_id === user.id}
+                        userId={user.id}
+                        onLeave={handleLeave}
+                        busy={!!joining[activity.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Later Activities */}
+              {groupedActivities.later.length > 0 && (
+                <div>
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
+                      Later
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {groupedActivities.later.map((activity) => (
+                      <CalendarActivityCard
+                        key={activity.id}
+                        activity={activity}
+                        isNext={false}
+                        isCreator={activity.creator_id === user.id}
+                        userId={user.id}
+                        onLeave={handleLeave}
+                        busy={!!joining[activity.id]}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
-
-        {myJoinedActivities.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
-            <UserCheck className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <h3 className="text-base font-semibold text-gray-900 mb-1">
-              No activities joined yet
-            </h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Browse the Activity Feed to find activities to join.
-            </p>
-            <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
-              <Plus className="w-4 h-4" />
-              Find Activities
-            </button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {myJoinedActivities
-              .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at))
-              .map((activity, index) => (
-                <MyActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  isNext={index === 0}
-                  isCreator={false}
-                  onLeave={handleLeave}
-                  busy={!!joining[activity.id]}
-                />
-              ))}
-          </div>
-        )}
       </div>
     </div>
   );

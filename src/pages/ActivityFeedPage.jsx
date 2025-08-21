@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { ActivityService } from "../services";
 import { supabase } from "../lib/supabase";
-import ActivityCard from "../components/ActivityCard";
+import FeedActivityCard from "../components/FeedActivityCard";
 import { Compass, Filter } from "lucide-react";
 
 export default function ActivityFeedPage() {
@@ -271,7 +271,7 @@ export default function ActivityFeedPage() {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
                   return (
-                    <ActivityCard
+                    <FeedActivityCard
                       key={activity.id}
                       activity={activity}
                       joined={joined}
@@ -300,7 +300,7 @@ export default function ActivityFeedPage() {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
                   return (
-                    <ActivityCard
+                    <FeedActivityCard
                       key={activity.id}
                       activity={activity}
                       joined={joined}
@@ -329,7 +329,7 @@ export default function ActivityFeedPage() {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
                   return (
-                    <ActivityCard
+                    <FeedActivityCard
                       key={activity.id}
                       activity={activity}
                       joined={joined}
@@ -358,7 +358,7 @@ export default function ActivityFeedPage() {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
                   return (
-                    <ActivityCard
+                    <FeedActivityCard
                       key={activity.id}
                       activity={activity}
                       joined={joined}

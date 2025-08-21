@@ -4,10 +4,10 @@ import {
   LiaWalkingSolid,
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
-import { MapPin, UsersRound } from "lucide-react";
+import { MapPin, UsersRound, LogOut } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
-export default function MyActivityCard({
+export default function CalendarActivityCard({
   activity,
   isNext = false,
   isCreator = true,
@@ -87,23 +87,12 @@ export default function MyActivityCard({
 
   return (
     <div
-      className={`relative bg-white border border-gray-100 rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
+      className={`relative bg-white rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
         isNext ? "shadow-md ring-1 ring-blue-100/50" : "shadow-sm"
-      } ${showParticipants ? "z-50" : ""}`}
+      } ${showParticipants ? "z-50" : ""} ${
+        isCreator ? "border-l-4 border-purple-500" : ""
+      }`}
     >
-      {/* Activity relationship badge */}
-      <div
-        className={`absolute -top-2.5 left-4 px-3 py-1 text-white text-xs font-semibold rounded-full shadow-sm uppercase tracking-wide ${
-          isNext
-            ? "bg-gradient-to-r from-blue-500 to-indigo-600"
-            : isCreator
-            ? "bg-gradient-to-r from-purple-600 to-purple-700"
-            : "bg-gradient-to-r from-green-600 to-green-700"
-        }`}
-      >
-        {isNext ? "🚀 Next Activity" : isCreator ? "👑 Created" : "🎯 Joined"}
-      </div>
-
       <div className="flex items-center justify-between pt-1">
         {/* Left side - Activity info with more emphasis */}
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -308,15 +297,38 @@ export default function MyActivityCard({
         </div>
       </div>
 
-      {/* Leave button for joined activities */}
+      {/* Leave button for joined activities (subtle icon button) */}
       {!isCreator && onLeave && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-start">
           <button
+            type="button"
             disabled={busy}
             onClick={() => onLeave(activity.id)}
-            className="w-full px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-500 bg-white hover:bg-red-50 hover:text-red-600 font-semibold text-sm transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            title="Leave activity"
           >
-            {busy ? "Leaving..." : "Leave Activity"}
+            <LogOut className="w-5 h-5" />
+            <span>Leave</span>
+          </button>
+        </div>
+      )}
+
+      {/* Show some action buttons if creator */}
+      {isCreator && (
+        <div className="mt-3 pt-3 border-t border-gray-100 flex justify-start gap-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-200 text-blue-500 bg-white hover:bg-blue-50 hover:text-blue-600 font-semibold text-sm transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            onClick={() => console.log("Edit activity")}
+          >
+            <span>Edit</span>
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-500 bg-white hover:bg-red-50 hover:text-red-600 font-semibold text-sm transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+            onClick={() => console.log("Delete activity")}
+          >
+            <span>Cancel</span>
           </button>
         </div>
       )}

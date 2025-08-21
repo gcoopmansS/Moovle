@@ -17,7 +17,7 @@ import {
 import { useState, useEffect, useRef } from "react";
 import FriendInviteModal from "./FriendInviteModal";
 
-export default function ActivityCard({
+export default function FeedActivityCard({
   activity,
   joined,
   busy,
@@ -25,7 +25,6 @@ export default function ActivityCard({
   onLeave,
   isOwnActivity = false,
   variant = "default",
-  isNext = false,
   ...rest
 }) {
   const [avatarError, setAvatarError] = useState(false);
@@ -97,7 +96,6 @@ export default function ActivityCard({
         minute: "2-digit",
         hour12: true,
       });
-    const hasParticipants = activity.participant_count > 0;
     return (
       <div
         className={`relative bg-white rounded-2xl p-4 transition-all duration-300 hover:shadow-lg hover:scale-[1.01] ${
