@@ -4,9 +4,24 @@ import {
   joinActivity as apiJoinActivity,
   leaveActivity as apiLeaveActivity,
   createActivity as apiCreateActivity,
+  cancelActivity as apiCancelActivity,
 } from "../api/activities.js";
 
 export class ActivityService {
+  /**
+   * Cancel (delete) an activity (creator only)
+   */
+  static async cancelActivity(activityId, userId) {
+    if (!activityId || !userId) {
+      throw new Error("Activity ID and User ID are required");
+    }
+    try {
+      await apiCancelActivity({ activity_id: activityId, user_id: userId });
+    } catch (error) {
+      console.error("Failed to cancel activity:", error);
+      throw new Error("Unable to cancel activity. Please try again.");
+    }
+  }
   /**
    * Join an activity with validation
    */

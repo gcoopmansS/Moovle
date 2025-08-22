@@ -1,3 +1,13 @@
+// Delete (cancel) an activity by id and user id (creator)
+export async function cancelActivity({ activity_id, user_id }) {
+  // Only allow the creator to delete
+  const { error } = await supabase
+    .from("activities")
+    .delete()
+    .eq("id", activity_id)
+    .eq("creator_id", user_id);
+  if (error) throw error;
+}
 import { supabase } from "../lib/supabase";
 
 // Helper function to fetch participant data for activities with optimized batching
@@ -223,10 +233,26 @@ export async function fetchMyActivities({
     uniqueActivities.map((a) => a.id)
   );
 
-  // Return activities with participant data
+  // Fetch creator profiles for all unique creator_ids
+  const creatorIds = [...new Set(uniqueActivities.map((a) => a.creator_id))];
+  let profilesMap = {};
+  if (creatorIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, display_name, avatar_url")
+      .in("id", creatorIds);
+    if (!profilesError && profiles) {
+      profilesMap = profiles.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {});
+    }
+  }
+
+  // Return activities with participant data and creator profile
   return uniqueActivities.map((activity) => ({
     ...activity,
-    creator: null, // We can handle this in the UI to show "You" or current user info
+    creator: profilesMap[activity.creator_id] || null,
     participants: participantsByActivity[activity.id] || [],
     participant_count: (participantsByActivity[activity.id] || []).length,
   }));

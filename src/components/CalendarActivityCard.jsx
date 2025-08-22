@@ -12,6 +12,7 @@ export default function CalendarActivityCard({
   isNext = false,
   isCreator = true,
   onLeave,
+  onCancel,
   busy = false,
 }) {
   const [avatarErrors, setAvatarErrors] = useState({});
@@ -326,7 +327,8 @@ export default function CalendarActivityCard({
           <button
             type="button"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-500 bg-white hover:bg-red-50 hover:text-red-600 font-semibold text-sm transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
-            onClick={() => console.log("Delete activity")}
+            onClick={() => onCancel && onCancel(activity.id)}
+            disabled={busy}
           >
             <span>Cancel</span>
           </button>

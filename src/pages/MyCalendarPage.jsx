@@ -515,6 +515,16 @@ export default function MyCalendarPage() {
                         isCreator={activity.creator_id === user.id}
                         userId={user.id}
                         onLeave={handleLeave}
+                        onCancel={
+                          activity.creator_id === user.id
+                            ? handleCancel
+                            : undefined
+                        }
+                        onEdit={
+                          activity.creator_id === user.id
+                            ? handleEdit
+                            : undefined
+                        }
                         busy={!!joining[activity.id]}
                       />
                     ))}
@@ -539,6 +549,16 @@ export default function MyCalendarPage() {
                         isCreator={activity.creator_id === user.id}
                         userId={user.id}
                         onLeave={handleLeave}
+                        onCancel={
+                          activity.creator_id === user.id
+                            ? handleCancel
+                            : undefined
+                        }
+                        onEdit={
+                          activity.creator_id === user.id
+                            ? handleEdit
+                            : undefined
+                        }
                         busy={!!joining[activity.id]}
                       />
                     ))}
@@ -563,6 +583,16 @@ export default function MyCalendarPage() {
                         isCreator={activity.creator_id === user.id}
                         userId={user.id}
                         onLeave={handleLeave}
+                        onCancel={
+                          activity.creator_id === user.id
+                            ? handleCancel
+                            : undefined
+                        }
+                        onEdit={
+                          activity.creator_id === user.id
+                            ? handleEdit
+                            : undefined
+                        }
                         busy={!!joining[activity.id]}
                       />
                     ))}
@@ -587,6 +617,16 @@ export default function MyCalendarPage() {
                         isCreator={activity.creator_id === user.id}
                         userId={user.id}
                         onLeave={handleLeave}
+                        onCancel={
+                          activity.creator_id === user.id
+                            ? handleCancel
+                            : undefined
+                        }
+                        onEdit={
+                          activity.creator_id === user.id
+                            ? handleEdit
+                            : undefined
+                        }
                         busy={!!joining[activity.id]}
                       />
                     ))}

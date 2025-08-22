@@ -150,19 +150,16 @@ export default function ActivityFeedPage() {
 
   // Get unique sport types for filter dropdown
   const getUniqueSportTypes = (activities) => {
-    console.log("Activities for sport types:", activities); // Debug log
     const sportTypes = activities
       .map((activity) => {
         // The correct field name is 'type'
         const sportType = activity.type;
-        console.log(`Activity "${activity.title}" has sport type:`, sportType); // Debug log
         return sportType;
       })
       .filter(Boolean) // Remove null/undefined values
       .filter((type, index, array) => array.indexOf(type) === index) // Remove duplicates
       .sort(); // Alphabetical order
 
-    console.log("Unique sport types found:", sportTypes); // Debug log
     return sportTypes;
   };
 
