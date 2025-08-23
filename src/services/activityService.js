@@ -1,3 +1,4 @@
+import { transferOrganizer as apiTransferOrganizer } from "../api/activities.js";
 // src/services/activityService.js
 import {
   fetchFeed,
@@ -8,6 +9,16 @@ import {
 } from "../api/activities.js";
 
 export class ActivityService {
+  /**
+   * Transfer organizer role to another participant
+   */
+  static async transferOrganizer(activityId, newCreatorId, currentUserId) {
+    return apiTransferOrganizer({
+      activity_id: activityId,
+      new_creator_id: newCreatorId,
+      current_user_id: currentUserId,
+    });
+  }
   /**
    * Cancel (delete) an activity (creator only)
    */

@@ -1,3 +1,22 @@
+// Transfer organizer (change creator_id) of an activity
+export async function transferOrganizer({ activity_id, new_creator_id, current_user_id }) {
+  // Only allow if current_user_id is the current creator
+  const { data: activity, error: fetchError } = await supabase
+    .from("activities")
+    .select("creator_id")
+    .eq("id", activity_id)
+    .single();
+  if (fetchError) throw fetchError;
+  if (!activity || activity.creator_id !== current_user_id) {
+    throw new Error("Only the current organizer can transfer the activity.");
+  }
+  const { error: updateError } = await supabase
+    .from("activities")
+    .update({ creator_id: new_creator_id })
+    .eq("id", activity_id);
+  if (updateError) throw updateError;
+  return { success: true };
+}
 // Delete (cancel) an activity by id and user id (creator)
 export async function cancelActivity({ activity_id, user_id }) {
   // Only allow the creator to delete

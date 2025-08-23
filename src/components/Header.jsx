@@ -144,14 +144,6 @@ export default function Header({ children }) {
       hoverColor: "hover:text-purple-600 hover:bg-purple-50",
     },
     {
-      id: "create",
-      label: "Create Activity",
-      icon: Plus,
-      gradient: "from-green-500 to-emerald-600",
-      hoverColor: "hover:text-green-600 hover:bg-green-50",
-      isPrimary: true,
-    },
-    {
       id: "friends",
       label: "Friends",
       icon: Users,
@@ -189,7 +181,7 @@ export default function Header({ children }) {
       <div className="max-w-6xl mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo & Navigation Group */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 flex-1">
             {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
@@ -212,7 +204,7 @@ export default function Header({ children }) {
                     onClick={() => handleNavigation(item.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? "text-blue-600 font-semibold"
+                        ? "text-purple-600 font-semibold"
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                   >
@@ -222,10 +214,17 @@ export default function Header({ children }) {
                 );
               })}
             </nav>
-          </div>
-
-          {/* Mobile Menu Button & User Section */}
-          <div className="flex items-center gap-3">
+            {/* Spacer to push right-side buttons */}
+            <div className="flex-1" />
+            {/* Create Activity Button (desktop, far right, smaller) */}
+            <button
+              onClick={() => handleNavigation("create")}
+              className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-full border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50 hover:text-purple-700 hover:border-purple-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-300 cursor-pointer"
+              title="Create Activity"
+            >
+              <Plus className="w-5 h-5" />
+              <span className="sr-only">Create Activity</span>
+            </button>
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
@@ -237,6 +236,7 @@ export default function Header({ children }) {
                 <Menu className="h-5 w-5" />
               )}
             </button>
+            {/* Create Activity Button (mobile, in menu) handled below */}
 
             {/* Notifications & Messages (Desktop) */}
             <div className="hidden sm:flex items-center gap-2">

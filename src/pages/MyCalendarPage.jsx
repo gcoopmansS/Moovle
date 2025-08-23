@@ -242,16 +242,32 @@ export default function MyCalendarPage() {
     }
   }
 
-  async function handleCancel(activityId) {
+  async function handleCancel(activityId, options = {}) {
     if (!user?.id) return;
     setJoining((s) => ({ ...s, [activityId]: true }));
     try {
-      await ActivityService.cancelActivity(activityId, user.id);
-      setMyCreatedActivities((prev) => prev.filter((a) => a.id !== activityId));
-      setSuccessMessage("Activity cancelled successfully.");
+      if (options.mode === "transfer" && options.newOrganizer) {
+        await ActivityService.transferOrganizer(
+          activityId,
+          options.newOrganizer,
+          user.id
+        );
+        setMyCreatedActivities((prev) =>
+          prev.filter((a) => a.id !== activityId)
+        );
+        setSuccessMessage(
+          "Organizer role transferred. You are no longer the organizer."
+        );
+      } else {
+        await ActivityService.cancelActivity(activityId, user.id);
+        setMyCreatedActivities((prev) =>
+          prev.filter((a) => a.id !== activityId)
+        );
+        setSuccessMessage("Activity cancelled for all participants.");
+      }
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (error) {
-      console.error("Failed to cancel activity:", error);
+      console.error("Failed to cancel/transfer activity:", error);
     } finally {
       setJoining((s) => ({ ...s, [activityId]: false }));
     }
