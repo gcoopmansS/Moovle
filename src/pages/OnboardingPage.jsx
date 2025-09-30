@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { MapPin } from "lucide-react";
 import LocationInput from "../components/LocationInput";
+import { extractOAuthProfileData } from "../utils/oauthProfile";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -46,18 +47,21 @@ export default function OnboardingPage() {
         throw new Error("No user found");
       }
 
-      // Generate display name from OAuth data or email
-      const oauthDisplayName =
-        user.user_metadata?.full_name ||
-        user.user_metadata?.name ||
-        user.user_metadata?.display_name;
-      const fallbackName =
-        oauthDisplayName || user.email?.split("@")[0] || "User";
+      // Extract OAuth profile data
+      const { displayName, avatarUrl, provider } = extractOAuthProfileData(user);
+      const fallbackName = displayName || user.email?.split("@")[0] || "User";
+
+      console.log("Onboarding: Saving OAuth profile data:", {
+        displayName: fallbackName,
+        avatarUrl: avatarUrl ? avatarUrl.substring(0, 50) + '...' : null,
+        provider
+      });
 
       // Update user profile with location and mark onboarding as complete
       const { error } = await supabase.from("profiles").upsert({
         id: user.id,
         display_name: fallbackName,
+        avatar_url: avatarUrl || null,
         location: location.place_name,
         location_lat: location.lat,
         location_lng: location.lng,

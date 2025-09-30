@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { ensureOAuthProfile } from "../utils/oauthProfile";
 
 export function useSupabaseAuth() {
   const [session, setSession] = useState(null);
@@ -18,6 +19,11 @@ export function useSupabaseAuth() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setLoading(false);
+      
+      // Handle OAuth profile creation/update on sign in
+      if (event === 'SIGNED_IN' && session?.user) {
+        ensureOAuthProfile(session.user);
+      }
     });
 
     return () => subscription.unsubscribe();
