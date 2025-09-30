@@ -9,8 +9,6 @@ import { supabase } from "./lib/supabase";
 
 // Page components
 import LandingPageInline from "./pages/LandingPageInline";
-import LoginPage from "./pages/LoginPage";
-import SignupPage from "./pages/SignupPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import ActivityFeedPage from "./pages/ActivityFeedPage";
 import MyCalendarPage from "./pages/MyCalendarPage";
@@ -76,8 +74,6 @@ export default function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPageInline />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
 
         {/* Onboarding Route - Protected but doesn't require completed onboarding */}
         <Route

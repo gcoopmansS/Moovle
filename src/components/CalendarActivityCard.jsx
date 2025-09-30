@@ -4,7 +4,14 @@ import {
   LiaWalkingSolid,
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
-import { MapPin, UsersRound, LogOut, Trash2, User2 } from "lucide-react";
+import {
+  MapPin,
+  UsersRound,
+  LogOut,
+  Trash2,
+  User2,
+  PencilLine,
+} from "lucide-react";
 import { useState, useRef } from "react";
 
 const icons = {
@@ -45,6 +52,7 @@ export default function CalendarActivityCard({
   isCreator = true,
   onLeave,
   onCancel,
+  onEdit,
   busy = false,
 }) {
   const popoverRef = useRef(null);
@@ -308,6 +316,15 @@ export default function CalendarActivityCard({
       {isCreator && (
         <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
           <div className="flex gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center p-2 rounded-full border border-gray-200 text-gray-700 bg-white hover:bg-gray-50 hover:text-blue-600 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"
+              onClick={() => onEdit && onEdit(activity.id)}
+              disabled={busy}
+              title="Edit activity"
+            >
+              <PencilLine className="w-5 h-5" />
+            </button>
             <button
               type="button"
               className="inline-flex items-center justify-center p-2 rounded-full border border-red-200 text-red-500 bg-white hover:bg-red-50 hover:text-red-600 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-sm"

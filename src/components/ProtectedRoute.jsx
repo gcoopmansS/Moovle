@@ -176,7 +176,7 @@ export default function ProtectedRoute({ children, requireOnboarding = true }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Check if user needs to complete onboarding
