@@ -19,9 +19,9 @@ export function useSupabaseAuth() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setLoading(false);
-      
+
       // Handle OAuth profile creation/update on sign in
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === "SIGNED_IN" && session?.user) {
         ensureOAuthProfile(session.user);
       }
     });

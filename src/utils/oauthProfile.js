@@ -8,17 +8,17 @@ export function extractOAuthProfileData(user) {
   if (!user) return { displayName: null, avatarUrl: null, provider: null };
 
   const provider = user.app_metadata?.provider;
-  
+
   // Extract display name from various OAuth providers
-  const displayName = 
+  const displayName =
     user.user_metadata?.full_name ||
     user.user_metadata?.name ||
     user.user_metadata?.display_name ||
     null;
 
   // Extract avatar URL from various OAuth providers
-  const avatarUrl = 
-    user.user_metadata?.avatar_url || 
+  const avatarUrl =
+    user.user_metadata?.avatar_url ||
     user.user_metadata?.picture ||
     user.user_metadata?.photo ||
     user.user_metadata?.image ||
@@ -27,7 +27,7 @@ export function extractOAuthProfileData(user) {
   return {
     displayName,
     avatarUrl,
-    provider
+    provider,
   };
 }
 
@@ -43,10 +43,10 @@ export async function ensureOAuthProfile(user) {
 
   try {
     const { displayName, avatarUrl, provider } = extractOAuthProfileData(user);
-    
-    console.log(`OAuth Profile Sync (${provider || 'unknown'}):`, {
+
+    console.log(`OAuth Profile Sync (${provider || "unknown"}):`, {
       displayName,
-      hasAvatar: !!avatarUrl
+      hasAvatar: !!avatarUrl,
     });
 
     // Check if profile already exists
@@ -66,7 +66,8 @@ export async function ensureOAuthProfile(user) {
     // Always update with OAuth data if available
     const updateData = {
       id: user.id,
-      display_name: displayName || existingProfile?.display_name || fallbackName,
+      display_name:
+        displayName || existingProfile?.display_name || fallbackName,
     };
 
     // Always try to update avatar if we have one from OAuth
@@ -83,7 +84,6 @@ export async function ensureOAuthProfile(user) {
     } else {
       console.log("OAuth profile updated successfully");
     }
-
   } catch (error) {
     console.error("Error ensuring OAuth profile:", error);
   }

@@ -48,13 +48,14 @@ export default function OnboardingPage() {
       }
 
       // Extract OAuth profile data
-      const { displayName, avatarUrl, provider } = extractOAuthProfileData(user);
+      const { displayName, avatarUrl, provider } =
+        extractOAuthProfileData(user);
       const fallbackName = displayName || user.email?.split("@")[0] || "User";
 
       console.log("Onboarding: Saving OAuth profile data:", {
         displayName: fallbackName,
-        avatarUrl: avatarUrl ? avatarUrl.substring(0, 50) + '...' : null,
-        provider
+        avatarUrl: avatarUrl ? avatarUrl.substring(0, 50) + "..." : null,
+        provider,
       });
 
       // Update user profile with location and mark onboarding as complete

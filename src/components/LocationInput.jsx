@@ -2,17 +2,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin, Search } from "lucide-react";
 
 const MT_KEY = import.meta.env.VITE_MAPTILER_KEY; // required
-const GEOCODE_URL = (q) =>
-  `https://api.maptiler.com/geocoding/${encodeURIComponent(
+const GEOCODE_URL = (q, userLat, userLng) => {
+  let url = `https://api.maptiler.com/geocoding/${encodeURIComponent(
     q
-  )}.json?key=${MT_KEY}&limit=5&language=en`;
+  )}.json?key=${MT_KEY}&limit=8&language=en&types=poi,address,place&fuzzyMatch=true`;
+
+  // Add proximity parameter if user location is available
+  if (userLat && userLng) {
+    url += `&proximity=${userLng},${userLat}`;
+  }
+
+  return url;
+};
 
 export default function LocationInput({
   value, // { place_name, lat?, lng? }
   onChange, // (loc) => void
   required = true,
   label = "Location",
-  placeholder = "e.g. Herentals, Hoge Mouw parking",
+  placeholder = "e.g. Herentals, Café Central, or Sports Center",
   className = "",
 }) {
   const [text, setText] = useState(value?.place_name ?? "");
@@ -21,6 +29,7 @@ export default function LocationInput({
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
   const abortRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -28,6 +37,29 @@ export default function LocationInput({
   useEffect(() => {
     setText(value?.place_name ?? "");
   }, [value?.place_name]);
+
+  // Get user's current location for proximity-based search
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          // Silently fail - proximity is just a nice-to-have feature
+          console.log("Location access denied or unavailable:", error.message);
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 10000,
+          maximumAge: 300000, // Cache for 5 minutes
+        }
+      );
+    }
+  }, []);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -63,18 +95,109 @@ export default function LocationInput({
       abortRef.current = controller;
 
       try {
-        const res = await fetch(GEOCODE_URL(text.trim()), {
-          signal: controller.signal,
-        });
+        const res = await fetch(
+          GEOCODE_URL(text.trim(), userLocation?.lat, userLocation?.lng),
+          {
+            signal: controller.signal,
+          }
+        );
         const data = await res.json();
-        const items = (data.features || []).map((f) => ({
-          id: f.id,
-          place_name: f.place_name || f.place_name_en || f.text,
-          lat: f.center?.[1],
-          lng: f.center?.[0],
-          context: f.properties?.osm?.type || f.properties?.type || "",
-        }));
-        setSuggestions(items);
+        const items = (data.features || []).map((f) => {
+          // Extract POI category information
+          const poiCategory = f.properties?.category;
+          const placeType = f.place_type?.[0];
+
+          // Create more descriptive context for POIs
+          let context = f.properties?.osm?.type || f.properties?.type || "";
+
+          // Add category info for POIs to help users identify the type of place
+          if (poiCategory && placeType === "poi") {
+            const categoryText = poiCategory
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+            context = categoryText + (context ? ` • ${context}` : "");
+          }
+
+          // Calculate distance from user if location is available
+          let distanceFromUser = null;
+          if (userLocation && f.center) {
+            const lat1 = userLocation.lat;
+            const lng1 = userLocation.lng;
+            const lat2 = f.center[1];
+            const lng2 = f.center[0];
+
+            // Haversine formula for distance calculation
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = ((lat2 - lat1) * Math.PI) / 180;
+            const dLng = ((lng2 - lng1) * Math.PI) / 180;
+            const a =
+              Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos((lat1 * Math.PI) / 180) *
+                Math.cos((lat2 * Math.PI) / 180) *
+                Math.sin(dLng / 2) *
+                Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            distanceFromUser = R * c;
+          }
+
+          return {
+            id: f.id,
+            place_name: f.place_name || f.place_name_en || f.text,
+            lat: f.center?.[1],
+            lng: f.center?.[0],
+            context: context,
+            type: placeType,
+            category: poiCategory,
+            distanceFromUser: distanceFromUser,
+          };
+        });
+
+        // Enhanced sorting: combine POI relevance with proximity
+        const sortedItems = items.sort((a, b) => {
+          // First priority: POIs that match common activity meeting spots
+          const activityPOIs = [
+            "restaurant",
+            "cafe",
+            "bar",
+            "gym",
+            "park",
+            "sports",
+            "recreation",
+            "food",
+          ];
+          const aIsActivityPOI = activityPOIs.some(
+            (type) =>
+              a.category?.toLowerCase().includes(type) ||
+              a.place_name?.toLowerCase().includes(type) ||
+              a.context?.toLowerCase().includes(type)
+          );
+          const bIsActivityPOI = activityPOIs.some(
+            (type) =>
+              b.category?.toLowerCase().includes(type) ||
+              b.place_name?.toLowerCase().includes(type) ||
+              b.context?.toLowerCase().includes(type)
+          );
+
+          // If both or neither are activity POIs, sort by distance
+          if (aIsActivityPOI === bIsActivityPOI) {
+            // If we have distances, prioritize closer locations
+            if (a.distanceFromUser !== null && b.distanceFromUser !== null) {
+              return a.distanceFromUser - b.distanceFromUser;
+            }
+            // If only one has distance, prioritize it
+            if (a.distanceFromUser !== null) return -1;
+            if (b.distanceFromUser !== null) return 1;
+            // Otherwise maintain original order
+            return 0;
+          }
+
+          // Activity POIs take priority regardless of distance
+          if (aIsActivityPOI && !bIsActivityPOI) return -1;
+          if (!aIsActivityPOI && bIsActivityPOI) return 1;
+          return 0;
+        });
+
+        setSuggestions(sortedItems);
       } catch {
         // ignore (aborted / offline)
         setSuggestions([]);
@@ -84,7 +207,7 @@ export default function LocationInput({
     }, 300); // debounce
 
     return () => clearTimeout(handle);
-  }, [text, focused]);
+  }, [text, focused, userLocation]);
 
   function pick(item) {
     setText(item.place_name);
@@ -102,7 +225,9 @@ export default function LocationInput({
     if (!text || text.trim().length < 3 || !MT_KEY) return false;
 
     try {
-      const res = await fetch(GEOCODE_URL(text.trim()));
+      const res = await fetch(
+        GEOCODE_URL(text.trim(), userLocation?.lat, userLocation?.lng)
+      );
       const data = await res.json();
       const top = (data.features || [])[0];
       if (!top?.center) return false;
@@ -208,11 +333,20 @@ export default function LocationInput({
                   <div className="text-sm font-medium text-gray-900 group-hover:text-blue-900 transition-colors">
                     {s.place_name}
                   </div>
-                  {s.context && (
-                    <div className="text-xs text-gray-500 group-hover:text-blue-600 transition-colors mt-0.5">
-                      {s.context}
-                    </div>
-                  )}
+                  <div className="flex items-center justify-between">
+                    {s.context && (
+                      <div className="text-xs text-gray-500 group-hover:text-blue-600 transition-colors mt-0.5">
+                        {s.context}
+                      </div>
+                    )}
+                    {s.distanceFromUser !== null && (
+                      <div className="text-xs text-blue-600 font-medium ml-2 mt-0.5">
+                        {s.distanceFromUser < 1
+                          ? `${Math.round(s.distanceFromUser * 1000)}m`
+                          : `${s.distanceFromUser.toFixed(1)}km`}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </button>
             ))}

@@ -250,8 +250,6 @@ export default function ProfilePage({ onProfileUpdate }) {
     }
   };
 
-
-
   if (loading && !hasLoadedOnce) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6">
@@ -279,8 +277,6 @@ export default function ProfilePage({ onProfileUpdate }) {
         <h2 className="text-2xl font-bold text-gray-900 mb-2">My Profile</h2>
         <p className="text-gray-600">Update your personal information</p>
       </div>
-
-
 
       <div className="bg-white shadow-md rounded-xl p-6">
         <form onSubmit={saveProfile} className="space-y-6">

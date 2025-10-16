@@ -1,5 +1,9 @@
 // Transfer organizer (change creator_id) of an activity
-export async function transferOrganizer({ activity_id, new_creator_id, current_user_id }) {
+export async function transferOrganizer({
+  activity_id,
+  new_creator_id,
+  current_user_id,
+}) {
   // Only allow if current_user_id is the current creator
   const { data: activity, error: fetchError } = await supabase
     .from("activities")
@@ -28,6 +32,19 @@ export async function cancelActivity({ activity_id, user_id }) {
   if (error) throw error;
 }
 import { supabase } from "../lib/supabase";
+
+// Helper functions to extract distance values and units
+function extractDistanceValue(distanceString) {
+  if (!distanceString) return null;
+  const match = distanceString.match(/^(\d+(?:\.\d+)?)/);
+  return match ? parseFloat(match[1]) : null;
+}
+
+function extractDistanceUnit(distanceString) {
+  if (!distanceString) return null;
+  const match = distanceString.match(/(\d+(?:\.\d+)?)([a-zA-Z]+)$/);
+  return match ? match[2] : null;
+}
 
 // Helper function to fetch participant data for activities with optimized batching
 async function fetchParticipantsForActivities(activityIds) {
@@ -290,7 +307,20 @@ export async function createActivity({
   place_name, // NEW
   lat, // NEW
   lng, // NEW
+  activity_data, // NEW - for storing dynamic activity-specific fields as JSON
 }) {
+  // Parse activity_data if it's a string
+  let parsedActivityData = {};
+  if (typeof activity_data === "string") {
+    try {
+      parsedActivityData = JSON.parse(activity_data);
+    } catch (error) {
+      console.warn("Invalid activity_data JSON:", activity_data, error);
+    }
+  } else if (activity_data && typeof activity_data === "object") {
+    parsedActivityData = activity_data;
+  }
+
   const { data, error } = await supabase
     .from("activities")
     .insert({
@@ -306,6 +336,15 @@ export async function createActivity({
       place_name,
       lat,
       lng,
+      // Store both JSON and individual fields for better querying
+      activity_data: parsedActivityData,
+      pace: parsedActivityData.pace || null,
+      difficulty: parsedActivityData.difficulty || null,
+      duration: parsedActivityData.duration || null,
+      skill_level: parsedActivityData.level || null,
+      // Extract distance value and unit if available
+      distance_value: extractDistanceValue(distance),
+      distance_unit: extractDistanceUnit(distance),
       // NOTE: geom will be auto-set by the trigger when lat/lng are present
     })
     .select("id")
