@@ -76,6 +76,7 @@ export default function Header({ children, onCreateClick }) {
         if (!error && profile) {
           // Handle avatar URL if it's a storage path
           let avatarUrl = profile.avatar_url;
+
           if (avatarUrl && !avatarUrl.startsWith("http")) {
             try {
               const { data: signed, error: signErr } = await supabase.storage
@@ -304,7 +305,13 @@ export default function Header({ children, onCreateClick }) {
                     src={userProfile.avatar_url}
                     alt={userProfile.display_name || "User"}
                     className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm"
-                    onError={() => setAvatarError(true)}
+                    onError={(e) => {
+                      console.error(
+                        "Avatar image failed to load:",
+                        e.target.src
+                      );
+                      setAvatarError(true);
+                    }}
                   />
                 ) : (
                   <div
