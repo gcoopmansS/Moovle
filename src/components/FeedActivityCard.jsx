@@ -27,7 +27,6 @@ export default function FeedActivityCard({
   variant = "default",
   ...rest
 }) {
-  const [avatarError, setAvatarError] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const dropdownRef = useRef(null);
@@ -70,7 +69,7 @@ export default function FeedActivityCard({
     volleyball: "sport-volleyball",
   };
 
-  const getInitials = (name) => {
+  const _getInitials = (name) => {
     if (!name) return "?";
     return name
       .split(" ")

@@ -15,7 +15,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-export default function Header({ children }) {
+export default function Header({ children, onCreateClick }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -153,6 +153,13 @@ export default function Header({ children }) {
   ];
 
   const handleNavigation = (itemId) => {
+    // Handle create modal
+    if (itemId === "create") {
+      onCreateClick?.();
+      setShowMobileMenu(false);
+      return;
+    }
+
     // Navigate using React Router
     if (itemId === "feed") {
       navigate("/app");

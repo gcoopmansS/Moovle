@@ -12,7 +12,6 @@ import LandingPageInline from "./pages/LandingPageInline";
 import OnboardingPage from "./pages/OnboardingPage";
 import ActivityFeedPage from "./pages/ActivityFeedPage";
 import MyCalendarPage from "./pages/MyCalendarPage";
-import CreateActivityPage from "./pages/CreateActivityPage";
 import FriendsPage from "./pages/FriendsPage";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -96,7 +95,6 @@ export default function App() {
         >
           <Route index element={<ActivityFeedPage />} />
           <Route path="calendar" element={<MyCalendarPage />} />
-          <Route path="create" element={<CreateActivityPage />} />
           <Route path="friends" element={<FriendsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="activity/:id" element={<ActivityDetailsPage />} />

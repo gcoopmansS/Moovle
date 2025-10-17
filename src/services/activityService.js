@@ -150,7 +150,8 @@ export class ActivityService {
       };
     } catch (error) {
       console.error("Failed to create activity:", error);
-      throw new Error("Unable to create activity. Please try again.");
+      console.error("Activity data being sent:", activityData);
+      throw new Error(`Unable to create activity: ${error.message}`);
     }
   }
 
