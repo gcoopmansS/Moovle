@@ -6,7 +6,7 @@ import {
   LiaWalkingSolid,
 } from "react-icons/lia";
 import { IoTennisballOutline } from "react-icons/io5";
-import { Users, Check } from "lucide-react";
+import { Users, Check, Plus } from "lucide-react";
 import { useSupabaseAuth } from "../hooks/useSupabaseAuth";
 import { ActivityService } from "../services";
 import LocationInput from "../components/LocationInput";
@@ -374,14 +374,22 @@ export default function CreateActivityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="min-h-screen">
+      <div className="max-w-lg mx-auto px-4 py-8 animate-fade-in">
         {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-light text-gray-900 mb-3">
-            New Activity
+        <div className="bg-white/60 backdrop-blur-sm p-8 rounded-2xl text-center mb-10 border border-white/40 shadow-minimal">
+          <div
+            className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center shadow-minimal"
+            style={{ background: "var(--color-dark-cyan)" }}
+          >
+            <Plus className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-medium text-onyx mb-3">
+            Create Activity
           </h1>
-          <p className="text-gray-500">Create something fun for your friends</p>
+          <p className="text-onyx/70">
+            Organize something amazing for your friends
+          </p>
         </div>
 
         {/* Main Form */}
@@ -389,7 +397,7 @@ export default function CreateActivityPage() {
           {/* Title */}
           <div className="space-y-1">
             <label
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-onyx"
               htmlFor="title"
             >
               What are you organizing?
@@ -397,10 +405,10 @@ export default function CreateActivityPage() {
             <input
               id="title"
               type="text"
-              className={`w-full px-4 py-3 border rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-200 ${
+              className={`w-full px-4 py-3 border bg-white/80 backdrop-blur-sm rounded-xl text-onyx placeholder-onyx/50 transition-all duration-200 shadow-minimal ${
                 touched.title && !title
-                  ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                  : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  ? "border-keppel/50 focus:border-keppel focus:ring-1 focus:ring-keppel/30"
+                  : "border-white/40 focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30"
               } focus:outline-none`}
               placeholder="e.g., Morning jog around the park"
               value={title}
@@ -409,13 +417,13 @@ export default function CreateActivityPage() {
               required
             />
             {touched.title && !title && (
-              <p className="text-sm text-red-500 mt-1">Please add a title</p>
+              <p className="text-sm text-keppel mt-1">Please add a title</p>
             )}
           </div>
 
           {/* Activity Type */}
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-onyx">
               What type of activity?
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -423,15 +431,15 @@ export default function CreateActivityPage() {
                 <button
                   type="button"
                   key={type.value}
-                  className={`group relative flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-200 ${
+                  className={`group relative flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all duration-300 shadow-minimal hover:scale-105 ${
                     selectedType === type.value
-                      ? "border-blue-500 bg-blue-50 text-blue-700 shadow-sm"
-                      : "border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:shadow-sm"
+                      ? "border-dark_cyan/50 bg-dark_cyan/10 text-dark_cyan"
+                      : "border-white/40 bg-white/60 backdrop-blur-sm text-onyx/70 hover:border-keppel/30 hover:bg-white/80"
                   }`}
                   onClick={() => handleActivityTypeChange(type.value)}
                 >
                   {selectedType === type.value && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute top-2 right-2 w-5 h-5 bg-dark_cyan rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -449,8 +457,8 @@ export default function CreateActivityPage() {
                     <div
                       className={`text-xs mt-0.5 ${
                         selectedType === type.value
-                          ? "text-blue-600"
-                          : "text-gray-500"
+                          ? "text-dark_cyan/80"
+                          : "text-onyx/50"
                       }`}
                     >
                       Up to {type.defaults.maxParticipants + 1} people
@@ -463,13 +471,13 @@ export default function CreateActivityPage() {
 
           {/* Date & Time */}
           <div className="space-y-4">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-onyx">
               When is it happening?
             </label>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label
-                  className="block text-xs font-medium text-gray-600"
+                  className="block text-xs font-medium text-onyx/70"
                   htmlFor="date"
                 >
                   Date
@@ -477,10 +485,10 @@ export default function CreateActivityPage() {
                 <input
                   id="date"
                   type="date"
-                  className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                  className={`w-full px-4 py-3 border bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-200 shadow-minimal ${
                     touched.date && !date
-                      ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                      : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "border-keppel/50 focus:border-keppel focus:ring-1 focus:ring-keppel/30"
+                      : "border-white/40 focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30"
                   } focus:outline-none`}
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
@@ -488,12 +496,12 @@ export default function CreateActivityPage() {
                   required
                 />
                 {touched.date && !date && (
-                  <p className="text-xs text-red-500 mt-1">Required</p>
+                  <p className="text-xs text-keppel mt-1">Required</p>
                 )}
               </div>
               <div className="space-y-1">
                 <label
-                  className="block text-xs font-medium text-gray-600"
+                  className="block text-xs font-medium text-onyx/70"
                   htmlFor="time"
                 >
                   Time
@@ -501,10 +509,10 @@ export default function CreateActivityPage() {
                 <input
                   id="time"
                   type="time"
-                  className={`w-full px-4 py-3 border rounded-xl transition-all duration-200 ${
+                  className={`w-full px-4 py-3 border bg-white/80 backdrop-blur-sm rounded-xl transition-all duration-200 shadow-minimal ${
                     touched.time && !time
-                      ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                      : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      ? "border-keppel/50 focus:border-keppel focus:ring-1 focus:ring-keppel/30"
+                      : "border-white/40 focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30"
                   } focus:outline-none`}
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
@@ -512,7 +520,7 @@ export default function CreateActivityPage() {
                   required
                 />
                 {touched.time && !time && (
-                  <p className="text-xs text-red-500 mt-1">Required</p>
+                  <p className="text-xs text-keppel mt-1">Required</p>
                 )}
               </div>
             </div>
@@ -523,8 +531,8 @@ export default function CreateActivityPage() {
 
           {/* Dynamic Activity-Specific Fields */}
           {currentActivityType?.fields && (
-            <div className="space-y-4 p-4 bg-gray-50 rounded-2xl">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">
+            <div className="space-y-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-minimal">
+              <h3 className="text-sm font-medium text-onyx mb-3">
                 {currentActivityType.label} Details
               </h3>
               <div className="grid grid-cols-1 gap-4">
@@ -532,7 +540,7 @@ export default function CreateActivityPage() {
                   ([fieldKey, fieldConfig]) => (
                     <div key={fieldKey} className="space-y-1">
                       <label
-                        className="block text-xs font-medium text-gray-600"
+                        className="block text-xs font-medium text-onyx/70"
                         htmlFor={fieldKey}
                       >
                         {fieldConfig.label}
@@ -546,7 +554,7 @@ export default function CreateActivityPage() {
                             type="number"
                             min="0"
                             step="0.1"
-                            className="flex-1 px-4 py-3 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
+                            className="flex-1 px-4 py-3 border border-white/40 bg-white/80 backdrop-blur-sm rounded-xl focus:outline-none focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30 transition-all duration-200 shadow-minimal"
                             placeholder={fieldConfig.placeholder}
                             value={dynamicFields[fieldKey] || ""}
                             onChange={(e) =>
@@ -554,7 +562,7 @@ export default function CreateActivityPage() {
                             }
                           />
                           <select
-                            className="px-3 py-3 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 min-w-[80px]"
+                            className="px-3 py-3 border border-white/40 bg-white/80 backdrop-blur-sm rounded-xl focus:outline-none focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30 transition-all duration-200 min-w-[80px] shadow-minimal"
                             value={
                               distanceUnits[fieldKey] || fieldConfig.defaultUnit
                             }
@@ -574,7 +582,7 @@ export default function CreateActivityPage() {
                         <input
                           id={fieldKey}
                           type={fieldConfig.type}
-                          className="w-full px-4 py-3 border border-gray-200 bg-white rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 border border-white/40 bg-white/80 backdrop-blur-sm rounded-xl focus:outline-none focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30 transition-all duration-200 shadow-minimal"
                           placeholder={fieldConfig.placeholder}
                           value={dynamicFields[fieldKey] || ""}
                           onChange={(e) =>
@@ -593,12 +601,12 @@ export default function CreateActivityPage() {
           <div className="space-y-3">
             <div>
               <label
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-medium text-onyx mb-1"
                 htmlFor="maxParticipants"
               >
                 How many can join?
               </label>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-onyx/60">
                 Not including you as the organizer
               </p>
             </div>
@@ -608,28 +616,28 @@ export default function CreateActivityPage() {
                 type="number"
                 min={1}
                 max={20}
-                className={`w-24 px-4 py-3 border rounded-xl text-center font-medium transition-all duration-200 ${
+                className={`w-24 px-4 py-3 border bg-white/80 backdrop-blur-sm rounded-xl text-center font-medium transition-all duration-200 shadow-minimal ${
                   touched.maxParticipants &&
                   (!maxParticipants || maxParticipants < 1)
-                    ? "border-red-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-                    : "border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    ? "border-keppel/50 focus:border-keppel focus:ring-1 focus:ring-keppel/30"
+                    : "border-white/40 focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30"
                 } focus:outline-none`}
                 value={maxParticipants}
                 onChange={(e) => setMaxParticipants(Number(e.target.value))}
                 onBlur={() => handleBlur("maxParticipants")}
                 required
               />
-              <div className="flex-1 p-3 bg-blue-50 rounded-xl">
-                <p className="text-sm font-medium text-blue-900">
+              <div className="flex-1 p-3 bg-dark_cyan/10 rounded-xl border border-white/40">
+                <p className="text-sm font-medium text-dark_cyan">
                   Total group size: {maxParticipants ? maxParticipants + 1 : 1}{" "}
                   people
                 </p>
-                <p className="text-xs text-blue-600 mt-1">Including you</p>
+                <p className="text-xs text-dark_cyan/70 mt-1">Including you</p>
               </div>
             </div>
             {touched.maxParticipants &&
               (!maxParticipants || maxParticipants < 1) && (
-                <p className="text-sm text-red-500">
+                <p className="text-sm text-keppel">
                   At least 1 person should be able to join
                 </p>
               )}
@@ -638,14 +646,14 @@ export default function CreateActivityPage() {
           {/* Description */}
           <div className="space-y-1">
             <label
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-onyx"
               htmlFor="description"
             >
               Anything else to share? (optional)
             </label>
             <textarea
               id="description"
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[100px] resize-none transition-all duration-200 placeholder-gray-400"
+              className="w-full px-4 py-3 border border-white/40 bg-white/80 backdrop-blur-sm rounded-xl focus:outline-none focus:border-dark_cyan focus:ring-1 focus:ring-dark_cyan/30 min-h-[100px] resize-none transition-all duration-200 placeholder-onyx/50 shadow-minimal"
               placeholder="e.g., What to bring, meeting point details, skill level expected..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -654,15 +662,15 @@ export default function CreateActivityPage() {
 
           {/* Visibility Options */}
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-onyx">
               Who can see and join?
             </label>
             <div className="space-y-3">
               <label
-                className={`relative flex items-start gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 ${
+                className={`relative flex items-start gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 ${
                   visibility === "all-friends"
-                    ? "border-blue-200 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-dark_cyan/50 bg-dark_cyan/10"
+                    : "border-white/40 hover:border-keppel/30 bg-white/60 backdrop-blur-sm"
                 }`}
               >
                 <input
@@ -671,26 +679,26 @@ export default function CreateActivityPage() {
                   value="all-friends"
                   checked={visibility === "all-friends"}
                   onChange={(e) => setVisibility(e.target.value)}
-                  className="w-5 h-5 text-blue-600 mt-0.5"
+                  className="w-5 h-5 text-dark_cyan mt-0.5 accent-dark_cyan"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">All Friends</div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="font-medium text-onyx">All Friends</div>
+                  <div className="text-sm text-onyx/70 mt-1">
                     Everyone you're friends with can see and join
                   </div>
                 </div>
                 {visibility === "all-friends" && (
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-dark_cyan rounded-full flex items-center justify-center">
                     <Check className="w-4 h-4 text-white" />
                   </div>
                 )}
               </label>
 
               <label
-                className={`relative flex items-start gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all duration-200 ${
+                className={`relative flex items-start gap-4 p-4 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:scale-105 ${
                   visibility === "specific-friends"
-                    ? "border-blue-200 bg-blue-50"
-                    : "border-gray-200 hover:border-gray-300"
+                    ? "border-dark_cyan/50 bg-dark_cyan/10"
+                    : "border-white/40 hover:border-keppel/30 bg-white/60 backdrop-blur-sm"
                 }`}
               >
                 <input
@@ -699,18 +707,16 @@ export default function CreateActivityPage() {
                   value="specific-friends"
                   checked={visibility === "specific-friends"}
                   onChange={(e) => setVisibility(e.target.value)}
-                  className="w-5 h-5 text-blue-600 mt-0.5"
+                  className="w-5 h-5 text-dark_cyan mt-0.5 accent-dark_cyan"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">
-                    Select Friends
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
+                  <div className="font-medium text-onyx">Select Friends</div>
+                  <div className="text-sm text-onyx/70 mt-1">
                     You'll choose which friends to invite after creating
                   </div>
                 </div>
                 {visibility === "specific-friends" && (
-                  <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 bg-dark_cyan rounded-full flex items-center justify-center">
                     <Check className="w-4 h-4 text-white" />
                   </div>
                 )}
@@ -748,24 +754,24 @@ export default function CreateActivityPage() {
 
           {/* Error Message */}
           {errorMsg && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
+            <div className="p-4 bg-keppel/10 border border-keppel/30 rounded-2xl">
               <div className="flex items-start gap-3">
-                <div className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5">
+                <div className="w-5 h-5 text-keppel flex-shrink-0 mt-0.5">
                   ⚠️
                 </div>
-                <p className="text-sm text-red-700 font-medium">{errorMsg}</p>
+                <p className="text-sm text-keppel font-medium">{errorMsg}</p>
               </div>
             </div>
           )}
 
           {/* Success Message */}
           {showSuccessMessage && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-2xl animate-fade-in">
+            <div className="p-4 bg-hookers_green/10 border border-hookers_green/30 rounded-2xl animate-fade-in">
               <div className="flex items-center gap-3">
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 bg-hookers_green rounded-full flex items-center justify-center flex-shrink-0">
                   <Check className="w-4 h-4 text-white" />
                 </div>
-                <p className="text-sm text-green-800 font-medium">
+                <p className="text-sm text-hookers_green font-medium">
                   Activity created! Taking you there now...
                 </p>
               </div>
@@ -777,7 +783,7 @@ export default function CreateActivityPage() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.01] active:scale-[0.99]"
+              className="w-full bg-dark_cyan hover:bg-dark_cyan/80 text-white font-medium py-4 rounded-2xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed shadow-minimal hover:shadow-lg transform hover:scale-[1.02] active:scale-[0.98]"
             >
               <div className="flex items-center justify-center gap-3">
                 {saving ? (

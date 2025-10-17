@@ -350,9 +350,9 @@ export default function MyCalendarPage() {
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
       {/* Success Message */}
       {successMessage && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
-          <CheckCircle className="w-5 h-5 text-green-600" />
-          <p className="font-medium text-green-900">{successMessage}</p>
+        <div className="bg-robin_egg_blue/20 border border-robin_egg_blue/40 rounded-xl p-4 flex items-center gap-3 animate-fade-in backdrop-blur-sm">
+          <CheckCircle className="w-5 h-5 text-hookers_green" />
+          <p className="font-medium text-onyx">{successMessage}</p>
         </div>
       )}
 
@@ -360,47 +360,54 @@ export default function MyCalendarPage() {
         {/* Left Sidebar - Quick Stats & Invitations */}
         <div className="lg:col-span-1 space-y-6">
           {/* Stats Cards */}
-          <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Overview
-            </h3>
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 shadow-minimal">
+            <h3 className="text-lg font-medium text-onyx mb-4">Overview</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                    <Crown className="w-5 h-5 text-amber-600" />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "var(--color-keppel)" }}
+                  >
+                    <Crown className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-onyx">
                       {myCreatedActivities.length}
                     </div>
-                    <div className="text-sm text-gray-600">Organized</div>
+                    <div className="text-sm text-keppel">Organized</div>
                   </div>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
-                    <UserCheck className="w-5 h-5 text-emerald-600" />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "var(--color-dark-cyan)" }}
+                  >
+                    <UserCheck className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-onyx">
                       {myJoinedActivities.length}
                     </div>
-                    <div className="text-sm text-gray-600">Joined</div>
+                    <div className="text-sm text-keppel">Joined</div>
                   </div>
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-blue-600" />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "var(--color-hookers-green)" }}
+                  >
+                    <Clock className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">
+                    <div className="font-semibold text-onyx">
                       {upcomingActivities.length}
                     </div>
-                    <div className="text-sm text-gray-600">This week</div>
+                    <div className="text-sm text-keppel">This week</div>
                   </div>
                 </div>
               </div>
@@ -409,11 +416,14 @@ export default function MyCalendarPage() {
 
           {/* Pending Invitations */}
           {pendingInvitations.length > 0 && (
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl border border-orange-200 p-6">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 p-6 shadow-minimal">
               <div className="flex items-center gap-2 mb-4">
-                <Mail className="w-5 h-5 text-orange-600" />
-                <h3 className="font-semibold text-gray-900">Invitations</h3>
-                <span className="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                <Mail className="w-5 h-5 text-hookers_green" />
+                <h3 className="font-medium text-onyx">Invitations</h3>
+                <span
+                  className="ml-auto text-xs text-white px-2 py-1 rounded-full font-medium"
+                  style={{ backgroundColor: "var(--color-keppel)" }}
+                >
                   {pendingInvitations.length}
                 </span>
               </div>
@@ -423,22 +433,24 @@ export default function MyCalendarPage() {
                   return (
                     <div
                       key={activity.id}
-                      className="bg-white rounded-xl border border-orange-200 p-4"
+                      className="bg-white/80 rounded-xl border border-white/40 p-4 backdrop-blur-sm"
                     >
-                      <h4 className="font-medium text-gray-900 text-sm mb-2">
+                      <h4 className="font-medium text-onyx text-sm mb-2">
                         {activity.title}
                       </h4>
                       <div className="flex gap-2">
                         <button
                           disabled={busy}
-                          className="flex-1 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-60"
+                          className="flex-1 px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-all duration-300 disabled:opacity-60 hover:scale-105"
+                          style={{ backgroundColor: "var(--color-dark-cyan)" }}
                           onClick={() => handleJoinFromInvitation(activity.id)}
                         >
                           {busy ? "..." : "Accept"}
                         </button>
                         <button
                           disabled={busy}
-                          className="flex-1 px-3 py-1.5 bg-gray-400 hover:bg-gray-500 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-60"
+                          className="flex-1 px-3 py-1.5 text-white text-xs font-medium rounded-lg transition-all duration-300 disabled:opacity-60 hover:scale-105"
+                          style={{ backgroundColor: "var(--color-keppel)" }}
                           onClick={() => handleDeclineInvitation(activity.id)}
                         >
                           {busy ? "..." : "Decline"}
@@ -456,20 +468,26 @@ export default function MyCalendarPage() {
         <div className="lg:col-span-3 space-y-6">
           {/* Timeline View - Activities grouped by time periods */}
           {allMyActivities.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
-              <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <div className="text-center py-12 bg-white/60 backdrop-blur-sm rounded-2xl border border-white/40 shadow-minimal">
+              <Calendar className="w-16 h-16 text-keppel mx-auto mb-4" />
+              <h3 className="text-xl font-medium text-onyx mb-2">
                 No activities yet
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-keppel mb-6">
                 Create your first activity or join one from the Activity Feed.
               </p>
               <div className="flex gap-3 justify-center">
-                <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-all duration-300 hover:scale-105"
+                  style={{ backgroundColor: "var(--color-dark-cyan)" }}
+                >
                   <Plus className="w-4 h-4" />
                   Create Activity
                 </button>
-                <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <button
+                  className="inline-flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-all duration-300 hover:scale-105"
+                  style={{ backgroundColor: "var(--color-hookers-green)" }}
+                >
                   <Plus className="w-4 h-4" />
                   Find Activities
                 </button>
@@ -481,10 +499,11 @@ export default function MyCalendarPage() {
               {groupedActivities.overdue.length > 0 && (
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Overdue
-                    </h3>
-                    <span className="text-sm bg-slate-100 text-slate-700 px-2 py-1 rounded-full font-medium">
+                    <h3 className="text-lg font-medium text-onyx">Overdue</h3>
+                    <span
+                      className="text-sm text-white px-2 py-1 rounded-full font-medium"
+                      style={{ backgroundColor: "var(--color-keppel)" }}
+                    >
                       {groupedActivities.overdue.length}
                     </span>
                   </div>
@@ -518,9 +537,7 @@ export default function MyCalendarPage() {
               {groupedActivities.today.length > 0 && (
                 <div>
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
-                      Today
-                    </h3>
+                    <h3 className="text-lg font-medium text-onyx">Today</h3>
                   </div>
                   <div className="space-y-3">
                     {groupedActivities.today.map((activity, index) => (
@@ -552,9 +569,7 @@ export default function MyCalendarPage() {
               {groupedActivities.tomorrow.length > 0 && (
                 <div>
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
-                      Tomorrow
-                    </h3>
+                    <h3 className="text-lg font-medium text-onyx">Tomorrow</h3>
                   </div>
                   <div className="space-y-3">
                     {groupedActivities.tomorrow.map((activity) => (
@@ -586,9 +601,7 @@ export default function MyCalendarPage() {
               {groupedActivities.thisWeek.length > 0 && (
                 <div>
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
-                      This week
-                    </h3>
+                    <h3 className="text-lg font-medium text-onyx">This week</h3>
                   </div>
                   <div className="space-y-3">
                     {groupedActivities.thisWeek.map((activity) => (
@@ -620,9 +633,7 @@ export default function MyCalendarPage() {
               {groupedActivities.later.length > 0 && (
                 <div>
                   <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900 tracking-tight">
-                      Later
-                    </h3>
+                    <h3 className="text-lg font-medium text-onyx">Later</h3>
                   </div>
                   <div className="space-y-3">
                     {groupedActivities.later.map((activity) => (

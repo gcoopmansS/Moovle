@@ -60,10 +60,14 @@ export default function FeedActivityCard({
   };
 
   const iconColors = {
-    running: "text-red-500 bg-red-50",
-    cycling: "text-blue-500 bg-blue-50",
-    tennis: "text-green-500 bg-green-50",
-    walking: "text-purple-500 bg-purple-50",
+    running: "sport-running",
+    cycling: "sport-cycling",
+    tennis: "sport-tennis",
+    walking: "sport-badminton",
+    swimming: "sport-swimming",
+    soccer: "sport-soccer",
+    basketball: "sport-basketball",
+    volleyball: "sport-volleyball",
   };
 
   const getInitials = (name) => {
@@ -149,81 +153,53 @@ export default function FeedActivityCard({
   // ...existing default/feed variant code...
 
   return (
-    <div className="bg-white shadow-lg hover:shadow-xl rounded-2xl p-6 border border-gray-100 transition-all duration-300 hover:scale-[1.02]">
-      {/* Header with sport icon and creator info */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-4">
-          {/* Sport Icon */}
+    <div className="bg-white/60 backdrop-blur-sm border-0 rounded-3xl p-6 transition-all duration-500 hover:bg-white/80 hover:backdrop-blur-md hover:translate-y-[-2px] animate-slide-up group">
+      {/* Minimalist Header */}
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-3">
+          {/* Simplified Sport Icon - smaller, more subtle */}
           <div
-            className={`p-3 rounded-xl ${
-              iconColors[activity.type] || "text-gray-500 bg-gray-50"
+            className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              iconColors[activity.type] || "bg-gray-100 text-gray-400"
             }`}
           >
-            {icons[activity.type] || <User className="size-8" />}
+            <div className="w-4 h-4">
+              {icons[activity.type] || <User className="w-4 h-4" />}
+            </div>
           </div>
 
-          {/* Activity Title and Creator */}
+          {/* Clean Activity Title */}
           <div className="flex-1">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 leading-tight mb-1">
               {activity.title}
-            </h2>
+            </h3>
 
-            {/* Creator Profile */}
-            <div className="flex items-center gap-3">
-              {/* Avatar */}
-              <div className="relative">
-                {activity.creator?.avatar_url && !avatarError ? (
-                  <img
-                    src={activity.creator.avatar_url}
-                    alt={activity.creator.display_name}
-                    className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
-                    onError={() => setAvatarError(true)}
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
-                    <span className="text-white text-xs font-semibold">
-                      {getInitials(activity.creator?.display_name)}
-                    </span>
-                  </div>
-                )}
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
-              </div>
-
-              {/* Creator Name */}
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900">
-                  {activity.creator?.display_name || "Unknown User"}
-                </span>
-                <span className="text-xs text-gray-500">Activity Creator</span>
-              </div>
-            </div>
+            {/* Subtle Creator Info */}
+            <p className="text-sm text-gray-500 font-normal">
+              by {activity.creator?.display_name || "Someone"}
+            </p>
           </div>
         </div>
 
-        {/* Status Badges */}
-        <div className="flex flex-col gap-2 items-end">
-          {activity.isInvited && (
-            <div className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full flex items-center gap-1">
-              <span>✉️</span>
-              Invited
-            </div>
-          )}
-          {joined && (
-            <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">
-              Joined ✓
-            </div>
-          )}
-        </div>
+        {/* Status Badge - Cleaner */}
+        {activity.isInvited && (
+          <div className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-100">
+            Invited
+          </div>
+        )}
+        {joined && (
+          <div className="px-2 py-1 bg-green-50 text-green-600 text-xs font-medium rounded-full border border-green-100">
+            Joined
+          </div>
+        )}
       </div>
 
-      {/* Activity Details */}
+      {/* Minimalist Activity Details */}
       <div className="space-y-3 mb-6">
-        {/* Date & Time */}
-        <div className="flex items-center gap-3 text-gray-600">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Calendar className="size-4 text-blue-600" />
-          </div>
-          <span className="text-sm font-medium">
+        {/* Date & Time - Clean single line */}
+        <div className="flex items-center gap-2 text-gray-600">
+          <Calendar className="w-4 h-4" />
+          <span className="text-sm">
             {activity.date
               ? `${activity.date} at ${activity.time}`
               : activity.starts_at
@@ -232,183 +208,59 @@ export default function FeedActivityCard({
           </span>
         </div>
 
-        {/* Location */}
+        {/* Location - Simple */}
         {activity.location_text && (
-          <div className="flex items-center gap-3 text-gray-600">
-            <div className="p-2 bg-red-50 rounded-lg">
-              <MapPin className="size-4 text-red-600" />
-            </div>
-            <span className="text-sm font-medium">
-              {activity.location_text}
-            </span>
+          <div className="flex items-center gap-2 text-gray-600">
+            <MapPin className="w-4 h-4" />
+            <span className="text-sm">{activity.location_text}</span>
           </div>
         )}
 
-        {/* Distance/Duration */}
+        {/* Distance/Duration - Clean */}
         {activity.distance && (
-          <div className="flex items-center gap-3 text-gray-600">
-            <div className="p-2 bg-purple-50 rounded-lg">
-              <Clock2 className="size-4 text-purple-600" />
-            </div>
-            <span className="text-sm font-medium">{activity.distance}</span>
+          <div className="flex items-center gap-2 text-gray-600">
+            <Clock2 className="w-4 h-4" />
+            <span className="text-sm">{activity.distance}</span>
           </div>
         )}
       </div>
 
-      {/* Description */}
+      {/* Description - Subtle */}
       {activity.description && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <p className="text-gray-700 text-sm leading-relaxed">
+        <div className="mb-6">
+          <p className="text-gray-600 text-sm leading-relaxed">
             {activity.description}
           </p>
         </div>
       )}
 
-      {/* Footer with participants and action button */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        {/* Participants */}
-        <div className="relative" ref={dropdownRef}>
-          <div
-            className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-            onClick={() => setShowParticipants(!showParticipants)}
-          >
-            <div className="p-2 bg-gray-50 rounded-lg">
-              <UsersRound className="size-4 text-gray-600" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-900">
-                {activity.participants?.length ??
-                  activity.participant_count ??
-                  0}
-                /{activity.maxParticipants ?? activity.max_participants ?? "∞"}
-              </span>
-              <span className="text-xs text-gray-500">participants</span>
-            </div>
-          </div>
-
-          {/* Participants Dropdown */}
-          {showParticipants &&
-            (activity.participants?.length ?? activity.participant_count ?? 0) >
-              0 && (
-              <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-lg z-10 min-w-64 max-w-80">
-                <div className="p-3">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                    Participants (
-                    {activity.participants?.length ??
-                      activity.participant_count ??
-                      0}
-                    )
-                  </h4>
-                  {activity.participants && activity.participants.length > 0 ? (
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {activity.participants.map((participant, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 text-sm"
-                        >
-                          {(() => {
-                            const avatarUrl =
-                              participant.profile?.avatar_url ||
-                              participant.avatar_url;
-                            const displayName =
-                              participant.profile?.display_name ||
-                              participant.display_name;
-
-                            // Only show image if we have a valid, non-empty avatar URL
-                            if (avatarUrl && avatarUrl.trim() !== "") {
-                              return (
-                                <img
-                                  src={avatarUrl}
-                                  alt="Profile"
-                                  className="w-8 h-8 rounded-full object-cover"
-                                  onError={(e) => {
-                                    // Replace failed image with fallback circle
-                                    const fallback =
-                                      document.createElement("div");
-                                    fallback.className =
-                                      "w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center";
-                                    fallback.innerHTML = `<span class="text-white font-semibold text-xs">${
-                                      displayName
-                                        ? displayName.charAt(0).toUpperCase()
-                                        : "U"
-                                    }</span>`;
-                                    e.target.parentNode.replaceChild(
-                                      fallback,
-                                      e.target
-                                    );
-                                  }}
-                                />
-                              );
-                            } else {
-                              // Show fallback circle directly
-                              return (
-                                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                  <span className="text-white font-semibold text-xs">
-                                    {displayName
-                                      ? displayName.charAt(0).toUpperCase()
-                                      : "U"}
-                                  </span>
-                                </div>
-                              );
-                            }
-                          })()}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-gray-900 font-medium truncate">
-                              {participant.profile?.display_name ||
-                                participant.display_name ||
-                                "Unknown User"}
-                            </p>
-                            {(participant.profile?.email ||
-                              participant.email) && (
-                              <p className="text-xs text-gray-500 truncate">
-                                {participant.profile?.email ||
-                                  participant.email}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-gray-500">
-                      No participant details available
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
+      {/* Minimalist Footer */}
+      <div className="flex items-center justify-between pt-2">
+        {/* Simple Participants Count */}
+        <div className="flex items-center gap-2 text-gray-500">
+          <UsersRound className="w-4 h-4" />
+          <span className="text-sm">
+            {activity.participants?.length ?? activity.participant_count ?? 0}
+            {activity.maxParticipants ?? activity.max_participants
+              ? `/${activity.maxParticipants ?? activity.max_participants}`
+              : ""}
+          </span>
         </div>
 
-        {/* Action Button or Participant Management */}
+        {/* Clean Action Button */}
         {isOwnActivity ? (
-          // For own activities: Show participant info and invite button
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
-              {(activity.participants?.length ??
-                activity.participant_count ??
-                0) > 0
-                ? `${
-                    activity.participants?.length ??
-                    activity.participant_count ??
-                    0
-                  } joined`
-                : "No participants yet"}
-            </span>
-            <button
-              onClick={() => setShowInviteModal(true)}
-              className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl flex items-center gap-2"
-            >
-              <UserPlus className="w-4 h-4" />
-              Invite Friends
-            </button>
-          </div>
+          <button
+            onClick={() => setShowInviteModal(true)}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors"
+          >
+            Invite
+          </button>
         ) : (
-          // For others' activities: Show join/leave buttons
           <>
             {joined ? (
               <button
                 disabled={busy}
-                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none cursor-pointer"
+                className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-full hover:bg-gray-200 transition-colors disabled:opacity-60"
                 onClick={onLeave}
               >
                 {busy ? "Leaving..." : "Leave"}
@@ -416,10 +268,10 @@ export default function FeedActivityCard({
             ) : (
               <button
                 disabled={busy}
-                className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-60 disabled:transform-none shadow-lg hover:shadow-xl"
+                className="px-6 py-2 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors disabled:opacity-60"
                 onClick={onJoin}
               >
-                {busy ? "Joining..." : "Join Activity"}
+                {busy ? "Joining..." : "Join"}
               </button>
             )}
           </>

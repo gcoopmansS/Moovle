@@ -133,22 +133,22 @@ export default function Header({ children }) {
       id: "feed",
       label: "Feed",
       icon: Home,
-      gradient: "from-blue-500 to-purple-600",
-      hoverColor: "hover:text-blue-600 hover:bg-blue-50",
+      gradient: "from-dark_cyan to-keppel",
+      hoverColor: "hover:text-dark_cyan hover:bg-dark_cyan/10",
     },
     {
       id: "calendar",
       label: "Calendar",
       icon: Calendar,
-      gradient: "from-purple-500 to-pink-600",
-      hoverColor: "hover:text-purple-600 hover:bg-purple-50",
+      gradient: "from-keppel to-robin_egg_blue",
+      hoverColor: "hover:text-keppel hover:bg-keppel/10",
     },
     {
       id: "friends",
       label: "Friends",
       icon: Users,
-      gradient: "from-orange-500 to-red-500",
-      hoverColor: "hover:text-orange-600 hover:bg-orange-50",
+      gradient: "from-hookers_green to-dark_cyan",
+      hoverColor: "hover:text-hookers_green hover:bg-hookers_green/10",
     },
   ];
 
@@ -184,10 +184,21 @@ export default function Header({ children }) {
           <div className="flex items-center gap-6 flex-1">
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
+                style={{ backgroundColor: "var(--color-dark-cyan)" }}
+              >
                 <span className="text-white font-bold text-sm">M</span>
               </div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1
+                className="text-2xl font-bold text-transparent bg-clip-text"
+                style={{
+                  background:
+                    "linear-gradient(to right, var(--color-dark-cyan), var(--color-keppel))",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                }}
+              >
                 Moovle
               </h1>
             </div>
@@ -204,8 +215,8 @@ export default function Header({ children }) {
                     onClick={() => handleNavigation(item.id)}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200 cursor-pointer ${
                       isActive
-                        ? "text-purple-600 font-semibold"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        ? "text-dark_cyan font-medium"
+                        : "text-onyx/70 hover:text-onyx hover:bg-white/60 backdrop-blur-sm"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -219,7 +230,16 @@ export default function Header({ children }) {
             {/* Create Activity Button (desktop, far right, smaller) */}
             <button
               onClick={() => handleNavigation("create")}
-              className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-full border-2 border-purple-500 text-purple-600 bg-white hover:bg-purple-50 hover:text-purple-700 hover:border-purple-600 shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-300 cursor-pointer"
+              className="hidden lg:inline-flex items-center justify-center w-9 h-9 rounded-full text-white shadow-sm hover:scale-105 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-robin_egg_blue/50 cursor-pointer"
+              style={{
+                backgroundColor: "var(--color-dark-cyan)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = "var(--color-hookers-green)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = "var(--color-dark-cyan)";
+              }}
               title="Create Activity"
             >
               <Plus className="w-5 h-5" />
@@ -228,7 +248,7 @@ export default function Header({ children }) {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setShowMobileMenu(!showMobileMenu)}
-              className="lg:hidden p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 cursor-pointer"
+              className="lg:hidden p-2.5 rounded-xl text-onyx/70 hover:text-dark_cyan hover:bg-dark_cyan/10 transition-all duration-200 cursor-pointer"
             >
               {showMobileMenu ? (
                 <X className="h-5 w-5" />
@@ -240,19 +260,19 @@ export default function Header({ children }) {
 
             {/* Notifications & Messages (Desktop) */}
             <div className="hidden sm:flex items-center gap-2">
-              <button className="p-2.5 rounded-xl text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
+              <button className="p-2.5 rounded-xl text-onyx/70 hover:text-dark_cyan hover:bg-dark_cyan/10 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
                 <Bell className="h-5 w-5" />
-                <div className="absolute inset-0 rounded-xl bg-blue-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
+                <div className="absolute inset-0 rounded-xl bg-dark_cyan/20 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
               </button>
 
-              <button className="p-2.5 rounded-xl text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
+              <button className="p-2.5 rounded-xl text-onyx/70 hover:text-keppel hover:bg-keppel/10 transition-all duration-200 transform hover:scale-105 active:scale-95 relative group cursor-pointer">
                 <MessageCircle className="h-5 w-5" />
-                <div className="absolute inset-0 rounded-xl bg-green-100 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
+                <div className="absolute inset-0 rounded-xl bg-keppel/20 opacity-0 group-hover:opacity-20 transition-opacity duration-200"></div>
               </button>
             </div>
 
             {/* User Greeting (Desktop) */}
-            <div className="hidden md:flex items-center text-gray-700">
+            <div className="hidden md:flex items-center text-onyx">
               <span className="text-sm font-medium">
                 Hi,{" "}
                 {userProfile?.display_name ||
@@ -280,7 +300,10 @@ export default function Header({ children }) {
                     onError={() => setAvatarError(true)}
                   />
                 ) : (
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-sm border-2 border-white">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm border-2 border-white"
+                    style={{ backgroundColor: "var(--color-dark-cyan)" }}
+                  >
                     <span className="text-white text-sm font-semibold">
                       {getInitials(userProfile?.display_name || user?.email)}
                     </span>
@@ -289,10 +312,10 @@ export default function Header({ children }) {
               </button>
 
               {showProfileMenu && (
-                <div className="absolute right-0 top-full mt-3 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
-                  <div className="px-4 py-2 border-b border-gray-100 mb-1">
-                    <p className="text-sm font-medium text-gray-900">Account</p>
-                    <p className="text-xs text-gray-500">Manage your profile</p>
+                <div className="absolute right-0 top-full mt-3 w-52 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-white/40 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                  <div className="px-4 py-2 border-b border-white/30 mb-1">
+                    <p className="text-sm font-medium text-onyx">Account</p>
+                    <p className="text-xs text-onyx/60">Manage your profile</p>
                   </div>
 
                   <button
@@ -300,9 +323,9 @@ export default function Header({ children }) {
                       navigate("/app/profile");
                       setShowProfileMenu(false);
                     }}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:text-blue-700 hover:bg-blue-50 transition-all duration-150 flex items-center gap-3 group"
+                    className="w-full px-4 py-3 text-left text-onyx/70 hover:text-dark_cyan hover:bg-dark_cyan/10 transition-all duration-150 flex items-center gap-3 group"
                   >
-                    <div className="p-1.5 rounded-lg bg-blue-100 text-blue-600 group-hover:bg-blue-200 transition-colors">
+                    <div className="p-1.5 rounded-lg bg-dark_cyan/20 text-dark_cyan group-hover:bg-dark_cyan/30 transition-colors">
                       <Settings className="w-3.5 h-3.5" />
                     </div>
                     <span className="font-medium">Profile Settings</span>
@@ -312,9 +335,9 @@ export default function Header({ children }) {
                     onClick={() => {
                       handleSignOut();
                     }}
-                    className="w-full px-4 py-3 text-left text-gray-700 hover:text-red-700 hover:bg-red-50 transition-all duration-150 flex items-center gap-3 group cursor-pointer"
+                    className="w-full px-4 py-3 text-left text-onyx/70 hover:text-keppel hover:bg-keppel/10 transition-all duration-150 flex items-center gap-3 group cursor-pointer"
                   >
-                    <div className="p-1.5 rounded-lg bg-red-100 text-red-600 group-hover:bg-red-200 transition-colors">
+                    <div className="p-1.5 rounded-lg bg-keppel/20 text-keppel group-hover:bg-keppel/30 transition-colors">
                       <LogOut className="w-3.5 h-3.5" />
                     </div>
                     <span className="font-medium">Sign Out</span>
@@ -330,7 +353,7 @@ export default function Header({ children }) {
         {showMobileMenu && (
           <div
             ref={mobileMenuRef}
-            className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-200/50 shadow-lg animate-in slide-in-from-top-2 duration-200"
+            className="lg:hidden absolute top-full left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-white/40 shadow-lg animate-in slide-in-from-top-2 duration-200"
           >
             <nav className="max-w-6xl mx-auto px-4 py-4">
               <div className="space-y-1">
@@ -344,8 +367,8 @@ export default function Header({ children }) {
                       onClick={() => handleNavigation(item.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all duration-200 text-left ${
                         isActive
-                          ? "text-blue-600 font-semibold"
-                          : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                          ? "text-dark_cyan font-medium"
+                          : "text-onyx/70 hover:text-onyx hover:bg-white/60"
                       }`}
                     >
                       <Icon className="h-4 w-4" />
@@ -356,12 +379,12 @@ export default function Header({ children }) {
               </div>
 
               {/* Mobile-only quick actions */}
-              <div className="mt-4 pt-4 border-t border-gray-200 flex gap-2">
-                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
+              <div className="mt-4 pt-4 border-t border-white/30 flex gap-2">
+                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-onyx/70 hover:text-dark_cyan hover:bg-dark_cyan/10 transition-all duration-200 cursor-pointer">
                   <Bell className="h-4 w-4" />
                   <span className="text-sm">Notifications</span>
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-gray-600 hover:text-green-600 hover:bg-green-50 transition-all duration-200 cursor-pointer">
+                <button className="flex-1 flex items-center justify-center gap-2 p-3 rounded-lg text-onyx/70 hover:text-keppel hover:bg-keppel/10 transition-all duration-200 cursor-pointer">
                   <MessageCircle className="h-4 w-4" />
                   <span className="text-sm">Messages</span>
                 </button>

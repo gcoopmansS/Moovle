@@ -1,24 +1,182 @@
 @import "tailwindcss";
 
-/* Smooth transitions for routing */
+/* ====================================
+   MINIMALISTIC COLOR DESIGN SYSTEM
+   ==================================== */
+
+:root {
+  /* Primary Color Palette - New Teal to Gray Color Scheme */
+  --color-onyx: #35393c;
+  --color-hookers-green: #397367;
+  --color-dark-cyan: #42858c;
+  --color-keppel: #5da399;
+  --color-robin-egg-blue: #63ccca;
+
+  /* Semantic Color Assignments */
+  --primary: var(--color-dark-cyan);
+  --secondary: var(--color-hookers-green);
+  --accent: var(--color-keppel);
+  --background: var(--color-robin-egg-blue);
+  --surface: #ffffff;
+  --text-primary: var(--color-onyx);
+  --text-secondary: var(--color-hookers-green);
+  --text-muted: var(--color-keppel);
+
+  /* Sport Type Colors (using the new palette) */
+  --sport-running: var(--color-dark-cyan);
+  --sport-cycling: var(--color-hookers-green);
+  --sport-walking: var(--color-keppel);
+  --sport-tennis: var(--color-robin-egg-blue);
+  --sport-swimming: var(--color-onyx);
+  --sport-football: var(--color-dark-cyan);
+  --sport-basketball: var(--color-hookers-green);
+  --sport-volleyball: var(--color-keppel);
+  --sport-badminton: var(--color-robin-egg-blue);
+  --sport-other: var(--color-onyx);
+}
+
+/* Global Styles */
+body {
+  background: var(--background);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  min-height: 100vh;
+  color: var(--text-primary);
+}
+
+/* Enhanced Button Styles */
+.btn-primary {
+  background: var(--primary);
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px 0 rgba(64, 110, 142, 0.2);
+}
+
+.btn-primary:hover {
+  background: var(--color-hookers-green);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(57, 115, 103, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  border: none;
+  color: white;
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 12px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px 0 rgba(136, 217, 230, 0.2);
+}
+
+.btn-secondary:hover {
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+
+/* Card Styles */
+.card-minimal {
+  background: var(--surface);
+  border-radius: 20px;
+  border: 1px solid rgba(136, 217, 230, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(55, 75, 74, 0.08);
+}
+
+.card-minimal:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(55, 75, 74, 0.12);
+  border-color: rgba(136, 217, 230, 0.25);
+}
+
+/* Glass effect with subtle background */
+.glass-minimal {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(136, 217, 230, 0.15);
+}
+
+/* Text Styles */
+.text-brand {
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.text-accent {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Sport Type Backgrounds */
+.sport-running {
+  background: var(--sport-running);
+  color: white;
+}
+.sport-cycling {
+  background: var(--sport-cycling);
+  color: white;
+}
+.sport-swimming {
+  background: var(--sport-swimming);
+  color: white;
+}
+.sport-tennis {
+  background: var(--sport-tennis);
+  color: white;
+}
+.sport-soccer {
+  background: var(--sport-soccer);
+  color: white;
+}
+.sport-basketball {
+  background: var(--sport-basketball);
+  color: white;
+}
+.sport-volleyball {
+  background: var(--sport-volleyball);
+  color: white;
+}
+.sport-badminton {
+  background: var(--sport-badminton);
+  color: white;
+}
+
+/* Enhanced Animations */
 @layer utilities {
   .animate-fade-in {
-    animation: fadeIn 0.4s ease-in-out;
+    animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .shadow-3xl {
-    box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.25);
+  .animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .shadow-minimal {
+    box-shadow: 0 4px 20px rgba(28, 55, 56, 0.1);
+  }
+
+  .shadow-minimal-hover {
+    box-shadow: 0 8px 40px rgba(28, 55, 56, 0.15);
   }
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-20px);
   }
   to {
     opacity: 1;
@@ -29,12 +187,62 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--secondary);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Form Enhancements */
+.input-minimal {
+  background: var(--surface);
+  border: 2px solid rgba(139, 170, 173, 0.2);
+  border-radius: 12px;
+  padding: 12px 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-primary);
+}
+
+.input-minimal:focus {
+  background: white;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(28, 55, 56, 0.1);
+  outline: none;
+}
+
+.input-minimal::placeholder {
+  color: var(--text-muted);
 }
 
 /* Prevent layout shift during navigation */
@@ -44,13 +252,14 @@
 
 /* Smooth page transitions */
 .page-transition {
-  transition: opacity 0.2s ease-in-out;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-in,
   .animate-slide-up,
+  .animate-scale-in,
   .page-transition {
     animation: none;
     transition: none;

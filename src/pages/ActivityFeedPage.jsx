@@ -168,54 +168,57 @@ export default function ActivityFeedPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 flex items-center justify-center">
-        <div className="flex items-center gap-2">
-          <Compass className="w-5 h-5 animate-spin text-blue-600" />
-          <span className="text-gray-600">Discovering activities...</span>
+      <div className="max-w-2xl mx-auto px-4 py-6 flex items-center justify-center min-h-[50vh]">
+        <div className="card-minimal p-8 rounded-2xl flex items-center gap-4 animate-scale-in">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ backgroundColor: "var(--secondary)" }}
+          >
+            <Compass className="w-5 h-5 animate-spin text-white" />
+          </div>
+          <span
+            className="font-medium"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Discovering amazing activities...
+          </span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-3 py-6 space-y-6">
-      {/* Header */}
+    <div className="max-w-4xl mx-auto px-3 py-8 space-y-8 animate-fade-in">
+      {/* Minimal Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center">
-            <Compass className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Discover Activities
-            </h1>
-            <p className="text-gray-600 text-sm">
-              Find sports activities near you
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl font-medium text-gray-900 mb-1">
+            Activities
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Discover sports activities near you
+          </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Sport Type Filter */}
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <select
-              value={selectedSportType}
-              onChange={(e) => setSelectedSportType(e.target.value)}
-              className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white text-sm min-w-[140px]"
-            >
-              <option value="">All Sports</option>
-              {uniqueSportTypes.length > 0 ? (
-                uniqueSportTypes.map((sportType) => (
-                  <option key={sportType} value={sportType}>
-                    {sportType}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No sport types available</option>
-              )}
-            </select>
-          </div>
+        {/* Simple Filter */}
+        <div className="relative">
+          <select
+            value={selectedSportType}
+            onChange={(e) => setSelectedSportType(e.target.value)}
+            className="bg-white border border-gray-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none pr-8"
+          >
+            <option value="">All Sports</option>
+            {uniqueSportTypes.length > 0 ? (
+              uniqueSportTypes.map((sportType) => (
+                <option key={sportType} value={sportType}>
+                  {sportType}
+                </option>
+              ))
+            ) : (
+              <option disabled>No sport types available</option>
+            )}
+          </select>
+          <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
       </div>
 
@@ -255,15 +258,9 @@ export default function ActivityFeedPage() {
         <div className="space-y-8">
           {/* Today */}
           {activityGroups.today.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-gray-900">Today</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
-                <span className="text-sm text-gray-500 font-medium">
-                  {activityGroups.today.length} activities
-                </span>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900">Today</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {activityGroups.today.map((activity) => {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
@@ -284,15 +281,9 @@ export default function ActivityFeedPage() {
 
           {/* Tomorrow */}
           {activityGroups.tomorrow.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-gray-900">Tomorrow</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
-                <span className="text-sm text-gray-500 font-medium">
-                  {activityGroups.tomorrow.length} activities
-                </span>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900">Tomorrow</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {activityGroups.tomorrow.map((activity) => {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
@@ -313,15 +304,9 @@ export default function ActivityFeedPage() {
 
           {/* This Week */}
           {activityGroups.thisWeek.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-gray-900">This Week</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
-                <span className="text-sm text-gray-500 font-medium">
-                  {activityGroups.thisWeek.length} activities
-                </span>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900">This Week</h2>
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
                 {activityGroups.thisWeek.map((activity) => {
                   const joined = !!joinedMap[activity.id];
                   const busy = !!joining[activity.id];
@@ -342,14 +327,8 @@ export default function ActivityFeedPage() {
 
           {/* Later */}
           {activityGroups.later.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-gray-900">Later</h2>
-                <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent"></div>
-                <span className="text-sm text-gray-500 font-medium">
-                  {activityGroups.later.length} activities
-                </span>
-              </div>
+            <div className="space-y-6">
+              <h2 className="text-lg font-medium text-gray-900">Later</h2>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
                 {activityGroups.later.map((activity) => {
                   const joined = !!joinedMap[activity.id];
